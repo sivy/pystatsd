@@ -12,7 +12,7 @@ setup(
     description = (""),
     license = "BSD",
     packages=['py-statsd'],
-    long_description=read('README'),
+    long_description=read('README.txt'),
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],
