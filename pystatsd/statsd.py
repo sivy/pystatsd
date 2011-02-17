@@ -20,13 +20,14 @@ class Statsd(object):
         self.host = host
         self.port = port
     
-    def timing(self, stats, time, sample_rate=1):
+    def timing(self, stat, time, sample_rate=1):
         """
-        Log timing information
+        Log timing information for a single stat
         >>> from pystatsd import statsd
         >>> statsd_client.timing('some.time','500|ms')
         """
-        self.update_stats(stats, time, sample_rate)
+        stats = {stat: "%d|ms" % time}
+        self.send(stats, sample_rate)
 
     def increment(self, stats, sample_rate=1):
         """
