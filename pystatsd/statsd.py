@@ -26,7 +26,7 @@ class Statsd(object):
         >>> from pystatsd import statsd
         >>> statsd_client.timing('some.time','500|ms')
         """
-        self.update_stats(self, stats, time, sample_rate)
+        self.update_stats(stats, time, sample_rate)
 
     def increment(self, stats, sample_rate=1):
         """
@@ -34,14 +34,14 @@ class Statsd(object):
         >>> statsd_client.increment('some.int')
         >>> statsd_client.increment('some.int',0.5)
         """
-        self.update_stats(self, stats, 1, sample_rate)
+        self.update_stats(stats, 1, sample_rate)
 
     def decrement(self, stats, sample_rate=1):
         """
         Decrements one or more stats counters
         >>> statsd_client.decrement('some.int')
         """
-        self.update_stats(self, stats, -1, sample_rate)
+        self.update_stats(stats, -1, sample_rate)
     
     def update_stats(self, stats, delta=1, sampleRate=1):
         """
