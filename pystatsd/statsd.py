@@ -3,7 +3,8 @@
 # Steve Ivy <steveivy@gmail.com>
 # http://monkinetic.com
 
-from socket import *
+import socket
+import random
 
 # Sends statistics to the stats daemon over UDP
 class Statsd(object):
@@ -66,18 +67,16 @@ class Statsd(object):
         sampled_data = {}
         
         if(sample_rate < 1):
-            import random
             if random.random() <= sample_rate:
-                for stat in data.keys():
+                for stat, value in data.iteritems():
                     value = data[stat]
                     sampled_data[stat] = "%s|@%s" %(value, sample_rate)
         else:
             sampled_data=data
         
-        udp_sock = socket(AF_INET, SOCK_DGRAM)
+        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            for stat in sampled_data.keys():
-                value = data[stat]
+            for stat, value in sampled_data.iteritems():
                 send_data = "%s:%s" % (stat, value)
                 udp_sock.sendto(send_data, addr)
         except:
