@@ -14,6 +14,14 @@ def _clean_key(k):
         k.replace('/','-').replace(' ','_')
     )
 
+
+TIMER_MSG = '''stats.timers.%(key)s.lower %(min)s %(ts)s
+stats.timers.%(key)s.count %(count)s %(ts)s
+stats.timers.%(key)s.mean %(mean)s %(ts)s
+stats.timers.%(key)s.upper %(max)s %(ts)s
+stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
+'''
+
 class Server(object):
 
     def __init__(self):
@@ -74,7 +82,7 @@ class Server(object):
 
                 self.timers[k] = []
 
-                data = {
+                stat_string += TIMER_MSG % {
                     'key':k,
                     'mean':mean,
                     'max': max,
@@ -84,16 +92,6 @@ class Server(object):
                     'pct_threshold': pct_threshold,
                     'ts': ts,
                 }
-                
-                msg = ''
-                msg += "stats.timers.%(key)s.lower %(min)s %(ts)s\n" % data
-                msg += "stats.timers.%(key)s.count %(count)s %(ts)s\n" % data
-                msg += "stats.timers.%(key)s.mean %(mean)s %(ts)s\n" % data
-                msg += "stats.timers.%(key)s.upper %(max)s %(ts)s\n" % data
-                msg += "stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s\n" % data
-
-                stat_string += msg
-
                 stats += 1
         
         stat_string += 'statsd.numStats %s %d' % (stats, ts)
@@ -103,6 +101,7 @@ class Server(object):
         graphite.sendall(stat_string)
         graphite.close()
         self._set_timer()
+
 
     def _set_timer(self):
         self._timer = threading.Timer(10, self.flush)
