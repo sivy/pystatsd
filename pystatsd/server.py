@@ -24,9 +24,11 @@ stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 
 class Server(object):
 
-    def __init__(self):
+    def __init__(self, pct_threshold=90, debug=False):
         self.buf = 1024
         self.flush_interval = 10000
+        self.pct_threshold = pct_threshold
+        self.debug = debug
 
         self.counters = {}
         self.timers = {}
@@ -55,7 +57,7 @@ class Server(object):
         ts = int(time.time())
         stats = 0
         stat_string = ''
-        pct_threshold = 10
+        self.pct_threshold = 10
         for k, v in self.counters.items():
             v = v / (self.flush_interval / 1000)
             msg = 'stats.%s %s %s\n' % (k, v, ts)
@@ -75,7 +77,7 @@ class Server(object):
                 max_threshold = max
 
                 if count > 1:
-                    thresh_index = int(((100.0 - pct_threshold) / 100) * count)
+                    thresh_index = int(((100.0 - self.pct_threshold) / 100) * count)
                     max_threshold = v[thresh_index - 1]
                     total = sum(v[:thresh_index-1])
                     mean = total / thresh_index
@@ -89,7 +91,7 @@ class Server(object):
                     'min': min,
                     'count': count,
                     'max_threshold': max_threshold,
-                    'pct_threshold': pct_threshold,
+                    'pct_threshold': self.pct_threshold,
                     'ts': ts,
                 }
                 stats += 1
@@ -102,13 +104,16 @@ class Server(object):
         graphite.close()
         self._set_timer()
 
+        if self.debug:
+            print stat_string
+
 
     def _set_timer(self):
         self._timer = threading.Timer(10, self.flush)
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
-        assert type(port) is types.IntType, "port is not an integer: %s" % (port)
+        assert type(port) is types.IntType, 'port is not an integer: %s' % (port)
         addr = (hostname, port)
         self._sock = socket(AF_INET, SOCK_DGRAM)
         self._sock.bind(addr)
@@ -130,4 +135,13 @@ class Server(object):
         
 
 if __name__ == '__main__':
-    Server().serve()
+    import sys
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
+    parser.add_option('-n', '--name', dest='name', help='hostname to run on', default='')
+    parser.add_option('-p', '--port', dest='port', help='port to run on', type='int', default=8125)
+    parser.add_option('-t', '--pct', dest='pct', help='stats pct threshold', type='int', default=90)
+    (options, args) = parser.parse_args(sys.argv)
+
+    Server(pct_threshold=options.pct, debug=options.debug).serve(options.name, options.port)
