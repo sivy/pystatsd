@@ -136,12 +136,12 @@ class Server(object):
 
 if __name__ == '__main__':
     import sys
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
-    parser.add_option('-n', '--name', dest='name', help='hostname to run on', default='')
-    parser.add_option('-p', '--port', dest='port', help='port to run on', type='int', default=8125)
-    parser.add_option('-t', '--pct', dest='pct', help='stats pct threshold', type='int', default=90)
-    (options, args) = parser.parse_args(sys.argv)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
+    parser.add_argument('-n', '--name', dest='name', help='hostname to run on', default='')
+    parser.add_argument('-p', '--port', dest='port', help='port to run on', type=int, default=8125)
+    parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold', type=int, default=90)
+    options = parser.parse_args(sys.argv[1:])
 
     Server(pct_threshold=options.pct, debug=options.debug).serve(options.name, options.port)
