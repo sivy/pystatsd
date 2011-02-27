@@ -16,7 +16,7 @@ See statsd_test for sample usage:
 
     from pystatsd import Client, Server
 
-    sc = Client('rayners.org',8125)
+    sc = Client('example.org',8125)
 
     sc.timing('python_test.time',500)
     sc.increment('python_test.inc_int')
