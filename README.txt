@@ -1,7 +1,7 @@
 Introduction
 ------------
 
-pystatsd is a client for Etsy's brilliant statsd server, a front end/proxy for the Graphite stats collection and graphing server.
+pystatsd is a client for, and server for, implementation of Etsy's brilliant statsd server, a front end/proxy for the Graphite stats collection and graphing server.
 
 * Graphite
     - http://graphite.wikidot.com
