@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "pystatsd",
-    version = "0.1.1",
+    version = "0.1.2",
     author = "Steve Ivy",
     author_email = "steveivy@gmail.com",
     description = ("pystatsd is a client for Etsy's brilliant statsd server, a front end/proxy for the Graphite stats collection and graphing server."),
@@ -14,6 +14,7 @@ setup(
     license = "BSD",
     packages=['pystatsd'],
     long_description=read('README.txt'),
+    requires=['argparse',]
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],
