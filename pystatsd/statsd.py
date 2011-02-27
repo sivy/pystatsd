@@ -7,7 +7,7 @@ import socket
 import random
 
 # Sends statistics to the stats daemon over UDP
-class Statsd(object):
+class Client(object):
     
     def __init__(self, host='localhost', port=8125):
         """
