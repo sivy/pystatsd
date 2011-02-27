@@ -24,10 +24,12 @@ stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 
 class Server(object):
 
-    def __init__(self, pct_threshold=90, debug=False):
+    def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003):
         self.buf = 1024
         self.flush_interval = 10000
         self.pct_threshold = pct_threshold
+        self.graphite_host = graphite_host
+        self.graphite_port = graphite_port
         self.debug = debug
 
         self.counters = {}
@@ -99,7 +101,7 @@ class Server(object):
         stat_string += 'statsd.numStats %s %d' % (stats, ts)
 
         graphite = socket()
-        graphite.connect(('127.0.0.1', 2003))
+        graphite.connect((graphite_host, graphite_port))
         graphite.sendall(stat_string)
         graphite.close()
         self._set_timer()
@@ -109,7 +111,7 @@ class Server(object):
 
 
     def _set_timer(self):
-        self._timer = threading.Timer(10, self.flush)
+        self._timer = threading.Timer(self.flush_interval/1000, self.flush)
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
@@ -141,6 +143,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
     parser.add_argument('-n', '--name', dest='name', help='hostname to run on', default='')
     parser.add_argument('-p', '--port', dest='port', help='port to run on', type=int, default=8125)
+    parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on', type=int, default=2003)
+    parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on', type=str, default='localhost')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold', type=int, default=90)
     options = parser.parse_args(sys.argv[1:])
 
