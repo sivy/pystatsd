@@ -14,7 +14,7 @@ setup(
     license = "BSD",
     packages=['pystatsd'],
     long_description=read('README.txt'),
-    requires=['argparse',]
+    requires=['argparse'],
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],
