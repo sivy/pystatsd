@@ -61,7 +61,7 @@ class Server(object):
         stat_string = ''
         self.pct_threshold = 10
         for k, v in self.counters.items():
-            v = v / (self.flush_interval / 1000)
+            v = float(v) / (self.flush_interval / 1000)
             msg = 'stats.%s %s %s\n' % (k, v, ts)
             stat_string += msg
 
@@ -101,7 +101,7 @@ class Server(object):
         stat_string += 'statsd.numStats %s %d' % (stats, ts)
 
         graphite = socket()
-        graphite.connect((graphite_host, graphite_port))
+        graphite.connect((self.graphite_host, self.graphite_port))
         graphite.sendall(stat_string)
         graphite.close()
         self._set_timer()
@@ -114,11 +114,13 @@ class Server(object):
         self._timer = threading.Timer(self.flush_interval/1000, self.flush)
         self._timer.start()
 
-    def serve(self, hostname='', port=8125):
+    def serve(self, hostname='', port=8125, graphite_host='localhost', graphite_port=2003):
         assert type(port) is types.IntType, 'port is not an integer: %s' % (port)
         addr = (hostname, port)
         self._sock = socket(AF_INET, SOCK_DGRAM)
         self._sock.bind(addr)
+        self.graphite_host = graphite_host
+        self.graphite_port = graphite_port
 
         import signal
         import sys
@@ -148,4 +150,4 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold', type=int, default=90)
     options = parser.parse_args(sys.argv[1:])
 
-    Server(pct_threshold=options.pct, debug=options.debug).serve(options.name, options.port)
+    Server(pct_threshold=options.pct, debug=options.debug).serve(options.name, options.port, options.graphite_host, options.graphite_port)
