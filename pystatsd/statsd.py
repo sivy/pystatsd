@@ -3,6 +3,7 @@
 # Steve Ivy <steveivy@gmail.com>
 # http://monkinetic.com
 
+import logging
 import socket
 import random
 
@@ -20,6 +21,7 @@ class Client(object):
         """
         self.host = host
         self.port = port
+        self.log = logging.getLogger("pystatsd.client")
     
     def timing(self, stat, time, sample_rate=1):
         """
@@ -80,7 +82,5 @@ class Client(object):
                 send_data = "%s:%s" % (stat, value)
                 udp_sock.sendto(send_data, addr)
         except:
-            import sys
-            from pprint import pprint
-            print "Unexpected error:", pprint(sys.exc_info())
+            self.log.exception("unexpected error")
             pass # we don't care
