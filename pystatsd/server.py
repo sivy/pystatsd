@@ -50,7 +50,7 @@ class Server(object):
             self.timers[key].append(int(fields[0] or 0))
         else:
             if len(fields) == 3:
-                sample_rate = int(re.match('^@([\d\.]+)', fields[2]).groups()[0])
+                sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
             if key not in self.counters:
                 self.counters[key] = 0;
             self.counters[key] += int(fields[0] or 1) * (1 / sample_rate)
