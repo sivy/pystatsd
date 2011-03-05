@@ -22,6 +22,7 @@ class Client(object):
         self.host = host
         self.port = port
         self.log = logging.getLogger("pystatsd.client")
+        self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
     def timing(self, stat, time, sample_rate=1):
         """
@@ -76,11 +77,10 @@ class Client(object):
         else:
             sampled_data=data
         
-        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             for stat, value in sampled_data.iteritems():
                 send_data = "%s:%s" % (stat, value)
-                udp_sock.sendto(send_data, addr)
+                self.udp_sock.sendto(send_data, addr)
         except:
             self.log.exception("unexpected error")
             pass # we don't care
