@@ -20,7 +20,7 @@ class Client(object):
         >>> stats_client = statsd.Statsd(host, port)
         """
         self.host = host
-        self.port = port
+        self.port = int(port)
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
