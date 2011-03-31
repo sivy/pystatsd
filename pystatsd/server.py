@@ -1,9 +1,16 @@
-import types
 import re
-import time
-
-import threading
 from socket import AF_INET, SOCK_DGRAM, socket
+import threading
+import time
+import types
+
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    setproctitle = None
+
+from daemon import Daemon
+
 
 __all__ = ['Server']
 
@@ -36,7 +43,7 @@ class Server(object):
         self.timers = {}
         self.flusher = 0
 
-    
+
     def process(self, data):
         key, val = data.split(':')
         key = _clean_key(key)
@@ -54,7 +61,7 @@ class Server(object):
             if key not in self.counters:
                 self.counters[key] = 0;
             self.counters[key] += int(fields[0] or 1) * (1 / sample_rate)
-        
+
     def flush(self):
         ts = int(time.time())
         stats = 0
@@ -97,7 +104,7 @@ class Server(object):
                     'ts': ts,
                 }
                 stats += 1
-        
+
         stat_string += 'statsd.numStats %s %d' % (stats, ts)
 
         graphite = socket()
@@ -127,7 +134,7 @@ class Server(object):
         def signal_handler(signal, frame):
                 self.stop()
         signal.signal(signal.SIGINT, signal_handler)
-        
+
         self._set_timer()
         while 1:
             data, addr = self._sock.recvfrom(self.buf)
@@ -136,7 +143,16 @@ class Server(object):
     def stop(self):
         self._timer.cancel()
         self._sock.close()
-        
+
+
+class ServerDaemon(Daemon):
+    def run(self, options):
+        if setproctitle:
+            setproctitle('pystatsd')
+        server = Server(pct_threshold=options.pct, debug=options.debug)
+        server.serve(options.name, options.port, options.graphite_host,
+                     options.graphite_port)
+
 
 if __name__ == '__main__':
     import sys
@@ -148,6 +164,18 @@ if __name__ == '__main__':
     parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on', type=int, default=2003)
     parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on', type=str, default='localhost')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold', type=int, default=90)
+    parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
+    parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
+    parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
+    parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
     options = parser.parse_args(sys.argv[1:])
 
-    Server(pct_threshold=options.pct, debug=options.debug).serve(options.name, options.port, options.graphite_host, options.graphite_port)
+    daemon = ServerDaemon(options.pidfile)
+    if options.daemonize:
+        daemon.start(options)
+    elif options.restart:
+        daemon.restart(options)
+    elif options.stop:
+        daemon.stop()
+    else:
+        daemon.run(options)
