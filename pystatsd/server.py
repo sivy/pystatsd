@@ -1,5 +1,6 @@
 import re
 from socket import AF_INET, SOCK_DGRAM, socket
+import sys
 import threading
 import time
 import types
@@ -153,9 +154,8 @@ class ServerDaemon(Daemon):
         server.serve(options.name, options.port, options.graphite_host,
                      options.graphite_port)
 
-
-if __name__ == '__main__':
-    import sys
+def statsd_server_command():
+    "Entry point for command line usage"
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
@@ -179,3 +179,8 @@ if __name__ == '__main__':
         daemon.stop()
     else:
         daemon.run(options)
+    return 0
+    
+
+if __name__ == '__main__':
+    sys.exit(statsd_server_command())

@@ -18,4 +18,8 @@ setup(
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],
+    entry_points = {
+        "console_scripts" : [
+            "statsd-server = pystatsd.server:statsd_server_command"
+            ]}
 )
