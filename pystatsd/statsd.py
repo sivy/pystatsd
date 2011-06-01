@@ -52,34 +52,28 @@ class Client(object):
         Updates one or more stats counters by arbitrary amounts
         >>> statsd_client.update_stats('some.int',10)
         """
-        if (type(stats) is not list):
+        if not isinstance(stats, list):
             stats = [stats]
-        data = {}
-        for stat in stats:
-            data[stat] = "%s|c" % delta
 
+        data = dict((stat, "%s|c" % delta) for stat in stats)
         self.send(data, sampleRate)
 
     def send(self, data, sample_rate=1):
         """
         Squirt the metrics over UDP
         """
-        addr=(self.host, self.port)
+        addr = (self.host, self.port)
 
         sampled_data = {}
 
-        if(sample_rate < 1):
-            if random.random() <= sample_rate:
-                for stat, value in data.iteritems():
-                    value = data[stat]
-                    sampled_data[stat] = "%s|@%s" %(value, sample_rate)
+        if sample_rate < 1:
+            if random.random() > sample_rate:
+                return
+            sampled_data = dict((stat, "%s|@%s" % (value, sample_rate)) for stat, value in data.iteritems())
         else:
             sampled_data=data
 
         try:
-            for stat, value in sampled_data.iteritems():
-                send_data = "%s:%s" % (stat, value)
-                self.udp_sock.sendto(send_data, addr)
+            [self.udp_sock.sendto("%s:%s" % (stat, value), addr) for stat, value in sampled_data.iteritems()]
         except:
             self.log.exception("unexpected error")
-            pass # we don't care
