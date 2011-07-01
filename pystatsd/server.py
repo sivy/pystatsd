@@ -153,7 +153,7 @@ class ServerDaemon(Daemon):
         server.serve(options.name, options.port, options.graphite_host,
                      options.graphite_port)
 
-def run_server()::
+def run_server():
     import sys
     import argparse
     parser = argparse.ArgumentParser()
