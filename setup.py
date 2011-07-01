@@ -18,4 +18,5 @@ setup(
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],
+    scripts=['bin/pystatd-server']
 )

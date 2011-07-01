@@ -153,8 +153,7 @@ class ServerDaemon(Daemon):
         server.serve(options.name, options.port, options.graphite_host,
                      options.graphite_port)
 
-
-if __name__ == '__main__':
+def run_server()::
     import sys
     import argparse
     parser = argparse.ArgumentParser()
@@ -179,3 +178,6 @@ if __name__ == '__main__':
         daemon.stop()
     else:
         daemon.run(options)
+
+if __name__ == '__main__':
+    run_server()
