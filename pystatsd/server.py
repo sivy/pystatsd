@@ -34,7 +34,7 @@ class Server(object):
     def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003):
         self.buf = 1024
         self.flush_interval = 10000
-        self.pct_threshold = pct_threshold
+        self.pct_threshold = float(pct_threshold)
         self.graphite_host = graphite_host
         self.graphite_port = graphite_port
         self.debug = debug
@@ -66,7 +66,6 @@ class Server(object):
         ts = int(time.time())
         stats = 0
         stat_string = ''
-        self.pct_threshold = 10
         for k, v in self.counters.items():
             v = float(v) / (self.flush_interval / 1000)
             msg = 'stats.%s %s %s\n' % (k, v, ts)
@@ -86,7 +85,7 @@ class Server(object):
                 max_threshold = max
 
                 if count > 1:
-                    thresh_index = int(((100.0 - self.pct_threshold) / 100) * count)
+                    thresh_index = int((self.pct_threshold / 100) * count)
                     max_threshold = v[thresh_index - 1]
                     total = sum(v[:thresh_index-1])
                     mean = total / thresh_index
