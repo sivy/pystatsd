@@ -29,3 +29,10 @@ Building a Debian Package
 -------------
 
 To build a debian package, run `dpkg-buildpackage -rfakeroot`
+
+Upstart init Script
+-------------
+Upstart is the daemon management system for Ubuntu, and it's really great!
+
+A basic upstart script has been included for the pystatd server. It's located under init/, and will be installed to /usr/share/doc if you build/install a .deb file. The upstart script should be copied to /etc/init/pystatd.conf and will read configuration variables from /etc/default/pystatd. It is highly suggested that you created a dedicated user to run pystatd under. Bydefault the upstart config file runs pystatd as root, and this is a bad thing. Future debian packages may create and configure a dedicated user upon install.
+

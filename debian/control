@@ -3,7 +3,7 @@ Maintainer: Rob Terhaar <rob@atlanticdynamic.com>
 Section: python
 Priority: optional
 Standards-Version: 3.8.3
-Build-Depends: debhelper (>= 7.3), python-support (>= 1.0.3), python
+Build-Depends: debhelper (>= 7.3), python-support (>= 1.0.3), python, python-argparse
 XS-Python-Version: all
 Vcs-Git: https://github.com/robbyt/py-statsd
 Vcs-Browser: https://github.com/robbyt/py-statsd
