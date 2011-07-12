@@ -4,7 +4,7 @@
 #
 
 description "start and stop the py-statd server"
-version "1.0"
+version "1.1"
 author "Rob Terhaar"
 
 description "py-statd server"
@@ -19,8 +19,6 @@ respawn
 
 pre-start script
   . /etc/default/pystatd
-  mkdir -p /var/run/pystatd
-  chown -R $USER /var/run/pystatd
 end script
 
 script
@@ -29,10 +27,8 @@ script
 --port $LOCAL_PYSTATD_PORT \
 --pct $PCT \
 --graphite-host $GRAPHITE_HOST \
---graphite-port $GRAPHITE_PORT \
---pidfile /var/run/pystatd/pystatd.pid" $USER
+--graphite-port $GRAPHITE_PORT" $USER
 end script
 
 post-stop script
-  rm /var/run/pystatd/pystatd.pid
 end script
