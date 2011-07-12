@@ -1,0 +1,38 @@
+# pystatd upstart script
+# 2011 - rob@atlanticdynamic.com
+# copy this to /etc/init/pystatd.conf 
+#
+
+description "start and stop the py-statd server"
+version "1.0"
+author "Rob Terhaar"
+
+description "py-statd server"
+respawn limit 15 5
+#oom never
+
+start on (local-filesystems
+    and net-device-up IFACE!=lo)
+stop on shutdown
+
+respawn
+
+pre-start script
+  . /etc/default/pystatd
+  mkdir -p /var/run/pystatd
+  chown -R $USER /var/run/pystatd
+end script
+
+script
+  . /etc/default/pystatd
+  exec su -s /bin/sh -c "/usr/bin/pystatd-server \
+--port $LOCAL_PYSTATD_PORT \
+--pct $PCT \
+--graphite-host $GRAPHITE_HOST \
+--graphite-port $GRAPHITE_PORT \
+--pidfile /var/run/pystatd/pystatd.pid" $USER
+end script
+
+post-stop script
+  rm /var/run/pystatd/pystatd.pid
+end script

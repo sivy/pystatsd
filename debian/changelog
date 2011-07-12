@@ -1,5 +1,12 @@
-python-statsd (1.0) lucid; urgency=low
+python-statsd (1.0-1) UNRELEASED; urgency=low
+
+  * add requirement module for python-argparse
+  * added upstart script to /usr/share/docs/python-statsd/ 
+
+ -- Rob Terhaar <rob@atlanticdynamic.com>  Tue, 12 Jul 2011 18:03:37 +0000
+
+python-statsd (1.0) UNRELEASED; urgency=low
 
   * First public package.
 
- -- Rob Terhaar <rob@atlanticdynamic.com>  Tue, 12 July 2011 13:16:53 -0500
+ -- Rob Terhaar <rob@atlanticdynamic.com>  Tue, 12 Jul 2011 18:02:24 +0000
