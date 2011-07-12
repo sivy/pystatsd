@@ -24,3 +24,8 @@ See statsd_test for sample usage:
 
     srvr = Server(debug=True)
     srvr.serve()
+
+Building a Debian Package
+-------------
+
+To build a debian package, run `dpkg-buildpackage -rfakeroot`
