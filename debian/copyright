@@ -1,0 +1,19 @@
+Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=59
+Source: https://github.com/sivy/py-statsd
+Maintainer: Rob Terhaar <rob@atlanticdynamic.com>
+
+Files: *
+Copyright: unknown
+License: unknown
+
+Files: debian/*
+Copyright: © 2011 Atlantic Dynamic
+License: GPL-3
+
+License: GPL-3
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, version 3 of the License.
+ .
+ On a Debian system, you can find a copy of the GPL version 3 in
+ /usr/share/common-licenses/GPL-3.
