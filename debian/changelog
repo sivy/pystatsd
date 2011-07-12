@@ -1,0 +1,5 @@
+python-statsd (1.0) lucid; urgency=low
+
+  * First public package.
+
+ -- Rob Terhaar <rob@atlanticdynamic.com>  Tue, 12 July 2011 13:16:53 -0500
