@@ -3,7 +3,7 @@ Maintainer: Rob Terhaar <rob@atlanticdynamic.com>
 Section: python
 Priority: optional
 Standards-Version: 3.8.3
-Build-Depends: debhelper (>= 7.3), python-support (>= 1.0.3), python, python-argparse
+Build-Depends: debhelper (>= 7.3), python-support (>= 1.0.3), python
 XS-Python-Version: all
 Vcs-Git: https://github.com/robbyt/py-statsd
 Vcs-Browser: https://github.com/robbyt/py-statsd
@@ -11,6 +11,6 @@ Homepage: https://github.com/robbyt/py-statsd
 
 Package: python-statsd
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}
+Depends: ${python:Depends}, ${misc:Depends}, python-argparse
 XB-Python-Version: ${python:Versions}
 Description: Statsd, in python
