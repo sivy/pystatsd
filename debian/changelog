@@ -1,9 +1,21 @@
-python-statsd (1.0-1) UNRELEASED; urgency=low
+python-statsd (1.0-2) UNRELEASED; urgency=low
 
+  [ Rob Terhaar ]
   * add requirement module for python-argparse
   * added upstart script to /usr/share/docs/python-statsd/ 
 
- -- Rob Terhaar <rob@atlanticdynamic.com>  Tue, 12 Jul 2011 18:03:37 +0000
+  [ Gábor Farkas ]
+  * do not override the threshold
+  * fixed stats-name generation
+
+  [ Rob Terhaar ]
+  * updated README documentation with upstart information
+  * manual pidfile mgmt is no longer needed since we're not daemonizing
+    via pystatd's -D option
+  * don't run daemon as root, user nobody works fine
+  * argparse needs to be a install dep, not a build dep.
+
+ -- Rob Terhaar <rterhaar@atlanticdynamic.com>  Thu, 14 Jul 2011 20:05:09 +0000
 
 python-statsd (1.0) UNRELEASED; urgency=low
 
