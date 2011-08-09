@@ -52,13 +52,13 @@ class Server(object):
         if (fields[1] == 'ms'):
             if key not in self.timers:
                 self.timers[key] = []
-            self.timers[key].append(int(fields[0] or 0))
+            self.timers[key].append(float(fields[0] or 0))
         else:
             if len(fields) == 3:
                 sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
             if key not in self.counters:
                 self.counters[key] = 0;
-            self.counters[key] += int(fields[0] or 1) * (1 / sample_rate)
+            self.counters[key] += float(fields[0] or 1) * (1 / sample_rate)
 
     def flush(self):
         ts = int(time.time())
