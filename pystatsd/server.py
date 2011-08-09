@@ -102,7 +102,7 @@ class Server(object):
                 }
                 stats += 1
 
-        stat_string += 'statsd.numStats %s %d' % (stats, ts)
+        stat_string += "statsd.numStats %s %d\n" % (stats, ts)
 
         graphite = socket()
         graphite.connect((self.graphite_host, self.graphite_port))
