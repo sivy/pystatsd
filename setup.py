@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "pystatsd",
-    version = "0.1.5",
+    version = "0.1.6",
     author = "Steve Ivy",
     author_email = "steveivy@gmail.com",
     description = ("pystatsd is a client for Etsy's statsd server, a front end/proxy for the Graphite stats collection and graphing server."),
