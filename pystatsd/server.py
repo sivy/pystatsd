@@ -3,6 +3,9 @@ from socket import AF_INET, SOCK_DGRAM, socket
 import threading
 import time
 import types
+import logging
+
+log = logging.getLogger(__name__)
 
 try:
     from setproctitle import setproctitle
@@ -16,9 +19,13 @@ __all__ = ['Server']
 
 def _clean_key(k):
     return re.sub(
-        '[^a-zA-Z_\-0-9\.]',
+        r'[^a-zA-Z_\-0-9\.]',
         '',
-        k.replace('/','-').replace(' ','_')
+        re.sub(
+            r'\s+',
+            '_',
+            k.replace('/','-').replace(' ','_')
+        )
     )
 
 TIMER_MSG = '''stats.timers.%(key)s.lower %(min)s %(ts)s
@@ -48,6 +55,8 @@ class Server(object):
 
         sample_rate = 1;
         fields = val.split('|')
+        if None==fields[1]:
+            log.error('Bad line: %s' % val)
 
         if (fields[1] == 'ms'):
             if key not in self.timers:
