@@ -9,7 +9,7 @@ setup(
     version = "0.1.5",
     author = "Steve Ivy",
     author_email = "steveivy@gmail.com",
-    description = ("pystatsd is a client for Etsy's brilliant statsd server, a front end/proxy for the Graphite stats collection and graphing server."),
+    description = ("pystatsd is a client for Etsy's statsd server, a front end/proxy for the Graphite stats collection and graphing server."),
     url='https://github.com/sivy/py-statsd',
     license = "BSD",
     packages=['pystatsd'],
