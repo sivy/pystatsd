@@ -38,16 +38,16 @@ class Client(object):
         >>> statsd_client.increment('some.int')
         >>> statsd_client.increment('some.int',0.5)
         """
-        self.update_stats(stats, sample_rate=sample_rate)
+        self.update_stats(stats, 1, sample_rate=sample_rate)
 
     def decrement(self, stats, sample_rate=1):
         """
         Decrements one or more stats counters
         >>> statsd_client.decrement('some.int')
         """
-        self.update_stats(stats, delta=-1, sample_rate=sample_rate)
+        self.update_stats(stats, -1, sample_rate=sample_rate)
 
-    def update_stats(self, stats, delta=1, sample_rate=1):
+    def update_stats(self, stats, delta, sample_rate=1):
         """
         Updates one or more stats counters by arbitrary amounts
         >>> statsd_client.update_stats('some.int',10)

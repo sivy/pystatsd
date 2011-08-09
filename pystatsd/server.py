@@ -21,7 +21,6 @@ def _clean_key(k):
         k.replace('/','-').replace(' ','_')
     )
 
-
 TIMER_MSG = '''stats.timers.%(key)s.lower %(min)s %(ts)s
 stats.timers.%(key)s.count %(count)s %(ts)s
 stats.timers.%(key)s.mean %(mean)s %(ts)s
@@ -30,7 +29,7 @@ stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 '''
 
 class Server(object):
-
+    
     def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003):
         self.buf = 1024
         self.flush_interval = 10000
@@ -42,7 +41,6 @@ class Server(object):
         self.counters = {}
         self.timers = {}
         self.flusher = 0
-
 
     def process(self, data):
         key, val = data.split(':')
