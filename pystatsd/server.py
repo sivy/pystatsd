@@ -57,6 +57,7 @@ class Server(object):
         fields = val.split('|')
         if None==fields[1]:
             log.error('Bad line: %s' % val)
+            return
 
         if (fields[1] == 'ms'):
             if key not in self.timers:
