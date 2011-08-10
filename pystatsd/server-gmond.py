@@ -104,7 +104,7 @@ class Server(object):
                 g.send(k + "_lower", min, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                 g.send(k + "_mean", mean, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                 g.send(k + "_upper", max, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                g.send(k + "_count", count, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                 g.send(k + "_" + str(self.pct_threshold) +"pct", max_threshold, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                 
                 stats += 1
