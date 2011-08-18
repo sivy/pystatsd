@@ -10,7 +10,7 @@ import random
 # Sends statistics to the stats daemon over UDP
 class Client(object):
 
-    def __init__(self, host='localhost', port=8125):
+    def __init__(self, host='localhost', port=8125, prefix=None):
         """
         Create a new Statsd client.
         * host: the host where statsd is listening, defaults to localhost
@@ -21,6 +21,7 @@ class Client(object):
         """
         self.host = host
         self.port = int(port)
+        self.prefix = prefix
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -64,7 +65,8 @@ class Client(object):
         """
         addr = (self.host, self.port)
 
-        sampled_data = {}
+        if self.prefix:
+            data = dict((".".join((self.prefix, stat)), value) for stat, value in data.iteritems())
 
         if sample_rate < 1:
             if random.random() > sample_rate:
