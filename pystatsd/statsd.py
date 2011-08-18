@@ -6,6 +6,7 @@
 import logging
 import socket
 import random
+import time
 
 # Sends statistics to the stats daemon over UDP
 class Client(object):
@@ -24,6 +25,16 @@ class Client(object):
         self.prefix = prefix
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def timing_since(self, stat, start, sample_rate=1):
+        """
+        Log timing information as the number of microseconds since the provided time float
+        >>> start = time.time()
+        >>> # do stuff
+        >>> statsd_client.timing_since('some.time', start)
+        """
+        self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
+
 
     def timing(self, stat, time, sample_rate=1):
         """
