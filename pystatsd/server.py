@@ -38,7 +38,7 @@ stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 class Server(object):
     
     def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003):
-        self.buf = 1024
+        self.buf = 8192
         self.flush_interval = 10000
         self.pct_threshold = pct_threshold
         self.graphite_host = graphite_host
@@ -50,25 +50,30 @@ class Server(object):
         self.flusher = 0
 
     def process(self, data):
-        key, val = data.split(':')
-        key = _clean_key(key)
+        bits = data.split(':')
+        key = _clean_key(bits[0])
 
-        sample_rate = 1;
-        fields = val.split('|')
-        if None==fields[1]:
-            log.error('Bad line: %s' % val)
-            return
+        del bits[0]
+        if len(bits) == 0:
+            bits.append(0)
 
-        if (fields[1] == 'ms'):
-            if key not in self.timers:
-                self.timers[key] = []
-            self.timers[key].append(float(fields[0] or 0))
-        else:
-            if len(fields) == 3:
-                sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
-            if key not in self.counters:
-                self.counters[key] = 0;
-            self.counters[key] += float(fields[0] or 1) * (1 / sample_rate)
+        for bit in bits:
+            sample_rate = 1;
+            fields = bit.split('|')
+            if None==fields[1]:
+                log.error('Bad line: %s' % val)
+                return
+
+            if (fields[1] == 'ms'):
+                if key not in self.timers:
+                    self.timers[key] = []
+                self.timers[key].append(float(fields[0] or 0))
+            else:
+                if len(fields) == 3:
+                    sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
+                if key not in self.counters:
+                    self.counters[key] = 0;
+                self.counters[key] += float(fields[0] or 1) * (1 / sample_rate)
 
     def flush(self):
         ts = int(time.time())
