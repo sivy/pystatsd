@@ -1,4 +1,4 @@
 from statsd import Client
 from server import Server
 
-VERSION = (0, 1, 6)
+VERSION = (0, 1, 7)
