@@ -56,7 +56,7 @@ class Server(object):
         if (fields[1] == 'ms'):
             if key not in self.timers:
                 self.timers[key] = []
-            self.timers[key].append(int(fields[0] or 0))
+            self.timers[key].append(float(fields[0] or 0))
         else:
             if len(fields) == 3:
                 sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
@@ -92,7 +92,7 @@ class Server(object):
                 if count > 1:
                     thresh_index = int((self.pct_threshold / 100.0) * count)
                     max_threshold = v[thresh_index - 1]
-                    total = sum(v[:thresh_index-1])
+                    total = sum(v)
                     mean = total / count
 
                 self.timers[k] = []
