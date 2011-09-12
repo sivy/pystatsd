@@ -28,21 +28,26 @@ def _clean_key(k):
         )
     )
 
-TIMER_MSG = '''stats.timers.%(key)s.lower %(min)s %(ts)s
-stats.timers.%(key)s.count %(count)s %(ts)s
-stats.timers.%(key)s.mean %(mean)s %(ts)s
-stats.timers.%(key)s.upper %(max)s %(ts)s
-stats.timers.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
+TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
+%(prefix)s.%(key)s.count %(count)s %(ts)s
+%(prefix)s.%(key)s.mean %(mean)s %(ts)s
+%(prefix)s.%(key)s.upper %(max)s %(ts)s
+%(prefix)s.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 '''
 
 class Server(object):
     
-    def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003):
+    def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003,
+                 flush_interval=10000, no_aggregate_counters = False, counters_prefix = 'stats',
+                 timers_prefix = 'stats.timers'):
         self.buf = 8192
-        self.flush_interval = 10000
+        self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
         self.graphite_host = graphite_host
         self.graphite_port = graphite_port
+        self.no_aggregate_counters = no_aggregate_counters
+        self.counters_prefix = counters_prefix
+        self.timers_prefix = timers_prefix
         self.debug = debug
 
         self.counters = {}
@@ -61,7 +66,7 @@ class Server(object):
             sample_rate = 1;
             fields = bit.split('|')
             if None==fields[1]:
-                log.error('Bad line: %s' % val)
+                log.error('Bad line: %s' % bit)
                 return
 
             if (fields[1] == 'ms'):
@@ -80,8 +85,10 @@ class Server(object):
         stats = 0
         stat_string = ''
         for k, v in self.counters.items():
-            v = float(v) / (self.flush_interval / 1000)
-            msg = 'stats.%s %s %s\n' % (k, v, ts)
+            v = float(v)
+            v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
+
+            msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
             stat_string += msg
 
             self.counters[k] = 0
@@ -106,6 +113,7 @@ class Server(object):
                 self.timers[k] = []
 
                 stat_string += TIMER_MSG % {
+                    'prefix':self.timers_prefix,
                     'key':k,
                     'mean':mean,
                     'max': max,
@@ -133,16 +141,13 @@ class Server(object):
         self._timer = threading.Timer(self.flush_interval/1000, self.flush)
         self._timer.start()
 
-    def serve(self, hostname='', port=8125, graphite_host='localhost', graphite_port=2003):
+    def serve(self, hostname='', port=8125):
         assert type(port) is types.IntType, 'port is not an integer: %s' % (port)
         addr = (hostname, port)
         self._sock = socket(AF_INET, SOCK_DGRAM)
         self._sock.bind(addr)
-        self.graphite_host = graphite_host
-        self.graphite_port = graphite_port
 
         import signal
-        import sys
         def signal_handler(signal, frame):
                 self.stop()
         signal.signal(signal.SIGINT, signal_handler)
@@ -161,20 +166,31 @@ class ServerDaemon(Daemon):
     def run(self, options):
         if setproctitle:
             setproctitle('pystatsd')
-        server = Server(pct_threshold=options.pct, debug=options.debug)
-        server.serve(options.name, options.port, options.graphite_host,
-                     options.graphite_port)
+        server = Server(pct_threshold = options.pct,
+                        debug = options.debug,
+                        graphite_host = options.graphite_host,
+                        graphite_port = options.graphite_port,
+                        flush_interval = options.flush_interval,
+                        no_aggregate_counters = options.no_aggregate_counters,
+                        counters_prefix = options.counters_prefix,
+                        timers_prefix = options.timers_prefix)
+        
+        server.serve(options.name, options.port)
 
 def run_server():
     import sys
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
-    parser.add_argument('-n', '--name', dest='name', help='hostname to run on', default='')
-    parser.add_argument('-p', '--port', dest='port', help='port to run on', type=int, default=8125)
-    parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on', type=int, default=2003)
-    parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on', type=str, default='localhost')
-    parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold', type=int, default=90)
+    parser.add_argument('-n', '--name', dest='name', help='hostname to run on ', default='')
+    parser.add_argument('-p', '--port', dest='port', help='port to run on (default: 8125)', type=int, default=8125)
+    parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type=int, default=2003)
+    parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
+    parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
+    parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
+    parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: statsd)', type=str, default='statsd')
+    parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: statsd.timers)', type=str, default='statsd.timers')
+    parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
     parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
     parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
     parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
