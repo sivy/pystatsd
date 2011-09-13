@@ -40,7 +40,7 @@ TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 class Server(object):
     
     def __init__(self, pct_threshold=90, debug=False, transport = 'graphite',
-                 ganglia_host='localhost', ganglia_port=8649,
+                 ganglia_host='localhost', ganglia_port=8649, ganglia_spoof_host='statd:statd',
                  graphite_host='localhost', graphite_port=2003,
                  flush_interval=10000, no_aggregate_counters = False, counters_prefix = 'stats',
                  timers_prefix = 'stats.timers'):
@@ -55,9 +55,8 @@ class Server(object):
         # Set DMAX to flush interval plus 20%. That should avoid metrics to prematurely expire if there is
         # some type of a delay when flushing
         self.dmax = int ( self.flush_interval * 1.2 ) 
-        # What hostname should these metrics be attached to. Here we'll just create a fake host called
-        # statsd
-        self.ganglia_spoof_host = "statsd:statsd"
+        # What hostname should these metrics be attached to.
+        self.ganglia_spoof_host = ganglia_spoof_host
 
         # Graphite specific settings
         self.graphite_host = graphite_host
@@ -220,6 +219,7 @@ class ServerDaemon(Daemon):
                         graphite_host = options.graphite_host,
                         graphite_port = options.graphite_port,
                         ganglia_host = options.ganglia_host,
+                        ganglia_spoof_host = options.ganglia_spoof_host,
                         ganglia_port = options.ganglia_port,
                         flush_interval = options.flush_interval,
                         no_aggregate_counters = options.no_aggregate_counters,
@@ -240,6 +240,7 @@ def run_server():
     parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
     parser.add_argument('--ganglia-port', dest='ganglia_port', help='port to connect to ganglia on', type=int, default=8649)
     parser.add_argument('--ganglia-host', dest='ganglia_host', help='host to connect to ganglia on', type=str, default='localhost')
+    parser.add_argument('--ganglia-spoof-host', dest='ganglia_spoof_host', help='host to report metrics as to ganglia', type=str, default='statd:statd')
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
     parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: statsd)', type=str, default='statsd')
