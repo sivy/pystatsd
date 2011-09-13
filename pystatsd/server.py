@@ -4,6 +4,8 @@ import threading
 import time
 import types
 import logging
+import gmetric
+from xdrlib import Packer, Unpacker
 
 log = logging.getLogger(__name__)
 
@@ -37,12 +39,27 @@ TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 
 class Server(object):
     
-    def __init__(self, pct_threshold=90, debug=False, graphite_host='localhost', graphite_port=2003,
+    def __init__(self, pct_threshold=90, debug=False, transport = 'graphite',
+                 ganglia_host='localhost', ganglia_port=8649,
+                 graphite_host='localhost', graphite_port=2003,
                  flush_interval=10000, no_aggregate_counters = False, counters_prefix = 'stats',
                  timers_prefix = 'stats.timers'):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
+        self.transport = transport
+        # Ganglia specific settings
+        self.ganglia_host = ganglia_host
+        self.ganglia_port = ganglia_port
+        self.ganglia_protocol = "udp"
+        # Set DMAX to flush interval plus 20%. That should avoid metrics to prematurely expire if there is
+        # some type of a delay when flushing
+        self.dmax = int ( self.flush_interval * 1.2 ) 
+        # What hostname should these metrics be attached to. Here we'll just create a fake host called
+        # statsd
+        self.ganglia_spoof_host = "statsd:statsd"
+
+        # Graphite specific settings
         self.graphite_host = graphite_host
         self.graphite_port = graphite_port
         self.no_aggregate_counters = no_aggregate_counters
@@ -83,19 +100,33 @@ class Server(object):
     def flush(self):
         ts = int(time.time())
         stats = 0
-        stat_string = ''
+        
+        if self.transport == 'graphite':
+            stat_string = ''
+        else:
+            g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
+        
         for k, v in self.counters.items():
             v = float(v)
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
 
-            msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
-            stat_string += msg
+            if self.debug:
+                print "Sending %s => count=%s" % ( k, v )
+
+            if self.transport == 'graphite':
+                msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
+                stat_string += msg
+            else:
+                # We put counters in _counters group. Underscore is to make sure counters show up
+                # first in the GUI. Change below if you disagree
+                g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
 
             self.counters[k] = 0
             stats += 1
 
         for k, v in self.timers.items():
             if len(v) > 0:
+                # Sort all the received values. We need it to extract percentiles
                 v.sort()
                 count = len(v)
                 min = v[0]
@@ -107,34 +138,51 @@ class Server(object):
                 if count > 1:
                     thresh_index = int((self.pct_threshold / 100.0) * count)
                     max_threshold = v[thresh_index - 1]
-                    total = sum(v[:thresh_index-1])
-                    mean = total / thresh_index
+                    total = sum(v)
+                    mean = total / count
 
                 self.timers[k] = []
 
-                stat_string += TIMER_MSG % {
-                    'prefix':self.timers_prefix,
-                    'key':k,
-                    'mean':mean,
-                    'max': max,
-                    'min': min,
-                    'count': count,
-                    'max_threshold': max_threshold,
-                    'pct_threshold': self.pct_threshold,
-                    'ts': ts,
-                }
+                if self.debug:
+                    print "Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" % ( k, min, mean, max, self.pct_threshold, max_threshold, count )
+
+                if self.transport == 'graphite':
+
+                    stat_string += TIMER_MSG % {
+                        'prefix':self.timers_prefix,
+                        'key':k,
+                        'mean':mean,
+                        'max': max,
+                        'min': min,
+                        'count': count,
+                        'max_threshold': max_threshold,
+                        'pct_threshold': self.pct_threshold,
+                        'ts': ts,
+                    }
+                    
+                else:
+                    # What group should these metrics be in. For the time being we'll set it to the name of the key
+                    group = k
+                    g.send(k + "_lower", min, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_mean", mean, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_upper", max, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_" + str(self.pct_threshold) +"pct", max_threshold, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    
                 stats += 1
 
-        stat_string += "statsd.numStats %s %d\n" % (stats, ts)
-
-        graphite = socket()
-        graphite.connect((self.graphite_host, self.graphite_port))
-        graphite.sendall(stat_string)
-        graphite.close()
+        if self.transport == 'graphite':
+            
+            stat_string += "statsd.numStats %s %d\n" % (stats, ts)
+            graphite = socket()
+            graphite.connect((self.graphite_host, self.graphite_port))
+            graphite.sendall(stat_string)
+            graphite.close()
+        
         self._set_timer()
 
         if self.debug:
-            print stat_string
+            print "\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" % ( stats )
 
 
     def _set_timer(self):
@@ -168,8 +216,11 @@ class ServerDaemon(Daemon):
             setproctitle('pystatsd')
         server = Server(pct_threshold = options.pct,
                         debug = options.debug,
+                        transport = options.transport,
                         graphite_host = options.graphite_host,
                         graphite_port = options.graphite_port,
+                        ganglia_host = options.ganglia_host,
+                        ganglia_port = options.ganglia_port,
                         flush_interval = options.flush_interval,
                         no_aggregate_counters = options.no_aggregate_counters,
                         counters_prefix = options.counters_prefix,
@@ -184,8 +235,11 @@ def run_server():
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
     parser.add_argument('-n', '--name', dest='name', help='hostname to run on ', default='')
     parser.add_argument('-p', '--port', dest='port', help='port to run on (default: 8125)', type=int, default=8125)
+    parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite or ganglia', type=str, default="graphite")
     parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type=int, default=2003)
     parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
+    parser.add_argument('--ganglia-port', dest='ganglia_port', help='port to connect to ganglia on', type=int, default=8649)
+    parser.add_argument('--ganglia-host', dest='ganglia_host', help='host to connect to ganglia on', type=str, default='localhost')
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
     parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: statsd)', type=str, default='statsd')
