@@ -1,0 +1,118 @@
+diff -Naur pystatsd-0.1.7/pystatsd/daemon.py pystatsd-0.1.7.new/pystatsd/daemon.py
+--- pystatsd-0.1.7/pystatsd/daemon.py	2011-10-10 11:12:48.000000000 -0700
++++ pystatsd-0.1.7.new/pystatsd/daemon.py	2011-10-10 11:07:40.000000000 -0700
+@@ -59,8 +59,11 @@
+         # Write the pidfile.
+         atexit.register(self.delpid)
+         pid = str(os.getpid())
+-        with open(self.pidfile, 'w+') as fp:
++	fp = open(self.pidfile, 'w+') 
++        try:
+             fp.write('%s\n' % pid)
++        finally:
++            fp.close()
+ 
+     def delpid(self):
+         os.remove(self.pidfile)
+@@ -69,8 +72,11 @@
+         """Start the daemon."""
+         pid = None
+         if os.path.exists(self.pidfile):
+-            with open(self.pidfile, 'r') as fp:
++            fp = open(self.pidfile, 'r') 
++            try: 
+                 pid = int(fp.read().strip())
++            finally:
++                fp.close()
+ 
+         if pid:
+             msg = 'pidfile (%s) exists. Daemon already running?\n'
+@@ -84,8 +90,11 @@
+         """Stop the daemon."""
+         pid = None
+         if os.path.exists(self.pidfile):
+-            with open(self.pidfile, 'r') as fp:
++            fp = open(self.pidfile, 'r') 
++            try: 
+                 pid = int(fp.read().strip())
++            finally:
++                fp.close()
+ 
+         if not pid:
+             msg = 'pidfile (%s) does not exist. Daemon not running?\n'
+diff -Naur pystatsd-0.1.7/pystatsd/server.py pystatsd-0.1.7.new/pystatsd/server.py
+--- pystatsd-0.1.7/pystatsd/server.py	2011-10-06 17:13:39.000000000 -0700
++++ pystatsd-0.1.7.new/pystatsd/server.py	2011-10-10 11:59:36.000000000 -0700
+@@ -107,7 +107,10 @@
+         
+         for k, v in self.counters.items():
+             v = float(v)
+-            v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
++            if self.no_aggregate_counters:
++	         v = v
++            else:
++                 v / (self.flush_interval / 1000)
+ 
+             if self.debug:
+                 print "Sending %s => count=%s" % ( k, v )
+@@ -230,27 +233,28 @@
+ 
+ def run_server():
+     import sys
+-    import argparse
+-    parser = argparse.ArgumentParser()
+-    parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
+-    parser.add_argument('-n', '--name', dest='name', help='hostname to run on ', default='')
+-    parser.add_argument('-p', '--port', dest='port', help='port to run on (default: 8125)', type=int, default=8125)
+-    parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite or ganglia', type=str, default="graphite")
+-    parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type=int, default=2003)
+-    parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
+-    parser.add_argument('--ganglia-port', dest='ganglia_port', help='port to connect to ganglia on', type=int, default=8649)
+-    parser.add_argument('--ganglia-host', dest='ganglia_host', help='host to connect to ganglia on', type=str, default='localhost')
+-    parser.add_argument('--ganglia-spoof-host', dest='ganglia_spoof_host', help='host to report metrics as to ganglia', type=str, default='statd:statd')
+-    parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
+-    parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
+-    parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: statsd)', type=str, default='statsd')
+-    parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: statsd.timers)', type=str, default='statsd.timers')
+-    parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
+-    parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
+-    parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
+-    parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
+-    parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
+-    options = parser.parse_args(sys.argv[1:])
++    from optparse import OptionParser
++
++    parser = OptionParser()
++    parser.add_option('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
++    parser.add_option('-n', '--name', dest='name', help='hostname to run on ', default='')
++    parser.add_option('-p', '--port', dest='port', help='port to run on (default: 8125)', type='int', default=8125)
++    parser.add_option('-r', '--transport', dest='transport', help='transport to use graphite or ganglia', type='str', default="graphite")
++    parser.add_option('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type='int', default=2003)
++    parser.add_option('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type='str', default='localhost')
++    parser.add_option('--ganglia-port', dest='ganglia_port', help='port to connect to ganglia on', type='int', default=8649)
++    parser.add_option('--ganglia-host', dest='ganglia_host', help='host to connect to ganglia on', type='str', default='localhost')
++    parser.add_option('--ganglia-spoof-host', dest='ganglia_spoof_host', help='host to report metrics as to ganglia', type='str', default='statd:statd')
++    parser.add_option('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type='int', default=10000)
++    parser.add_option('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
++    parser.add_option('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: statsd)', type='str', default='statsd')
++    parser.add_option('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: statsd.timers)', type='str', default='statsd.timers')
++    parser.add_option('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type='int', default=90)
++    parser.add_option('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
++    parser.add_option('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
++    parser.add_option('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
++    parser.add_option('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
++    (options, args) = parser.parse_args()
+ 
+     daemon = ServerDaemon(options.pidfile)
+     if options.daemonize:
+diff -Naur pystatsd-0.1.7/setup.py pystatsd-0.1.7.new/setup.py
+--- pystatsd-0.1.7/setup.py	2011-10-06 17:13:39.000000000 -0700
++++ pystatsd-0.1.7.new/setup.py	2011-10-06 17:28:47.000000000 -0700
+@@ -16,7 +16,6 @@
+     packages=['pystatsd'],
+     install_requires=['argparse >= 1.2'],
+     long_description=read('README'),
+-    requires=['argparse'],
+     classifiers=[
+         "License :: OSI Approved :: BSD License",
+     ],

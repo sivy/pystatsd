@@ -1,3 +1,7 @@
+%if 0%{?rhel} < 6
+%define needs_python24_patching 1
+%endif
+
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           pystatsd
@@ -8,6 +12,7 @@ Group:          Applications/Internet
 License:        Unknown
 URL:            http://pypi.python.org/pypi/pystatsd/
 Source0         http://pypi.python.org/packages/source/p/pystatsd/pystatsd-%{version}.tar.gz
+Patch0:         pystatsd-python2.4.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 
@@ -31,6 +36,10 @@ server, a front end/proxy for the Graphite stats collection and graphing server.
 
 %prep
 %setup -q
+
+%if %{needs_python24_patching}
+%patch0 -p1
+%endif
 
 %build
 %{__python} setup.py build
