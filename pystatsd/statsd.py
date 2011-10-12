@@ -3,6 +3,7 @@
 # Steve Ivy <steveivy@gmail.com>
 # http://monkinetic.com
 
+import contextlib
 import logging
 import socket
 import random
@@ -27,6 +28,12 @@ class Client(object):
         self.prefix = prefix
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    @contextlib.contextmanager
+    def timer(self, stats, sample_rate=1):
+        start = time.time()
+        yield
+        self.timing_since(stats, start, sample_rate)
 
     def timing_since(self, stats, start, sample_rate=1):
         """
