@@ -33,7 +33,7 @@ class Client(object):
         >>> # do stuff
         >>> statsd_client.timing_since('some.time', start)
         """
-        self.timing(stat, int((time.time() - start) * 1000), sample_rate)
+        self.timing(stat, (time.time() - start) * 1000, sample_rate)
 
 
     def timing(self, stat, time, sample_rate=1):
