@@ -28,18 +28,18 @@ class Client(object):
 
     def timing_since(self, stat, start, sample_rate=1):
         """
-        Log timing information as the number of microseconds since the provided time float
+        Log timing information as the number of milliseconds since the provided time float
         >>> start = time.time()
         >>> # do stuff
         >>> statsd_client.timing_since('some.time', start)
         """
-        self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
+        self.timing(stat, (time.time() - start) * 1000, sample_rate)
 
 
     def timing(self, stat, time, sample_rate=1):
         """
-        Log timing information for a single stat
-        >>> statsd_client.timing('some.time',500)
+        Log timing information for a single stat, in milliseconds
+        >>> statsd_client.timing('some.time', 500)
         """
         stats = {stat: "%f|ms" % time}
         self.send(stats, sample_rate)
