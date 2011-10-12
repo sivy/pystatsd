@@ -28,22 +28,25 @@ class Client(object):
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def timing_since(self, stat, start, sample_rate=1):
+    def timing_since(self, stats, start, sample_rate=1):
         """
         Log timing information as the number of milliseconds since the provided time float
         >>> start = time.time()
         >>> # do stuff
         >>> statsd_client.timing_since('some.time', start)
         """
-        self.timing(stat, (time.time() - start) * 1000, sample_rate)
+        self.timing(stats, (time.time() - start) * 1000, sample_rate)
 
-    def timing(self, stat, time, sample_rate=1):
+    def timing(self, stats, time, sample_rate=1):
         """
-        Log timing information for a single stat, in milliseconds
+        Log timing information for one or more stats, in milliseconds
         >>> statsd_client.timing('some.time', 500)
         """
-        stats = {stat: "%f|ms" % time}
-        self.send(stats, sample_rate)
+        if not isinstance(stats, list):
+            stats = [stats]
+
+        data = dict((stat, "%f|ms" % time) for stat in stats)
+        self.send(data, sample_rate)
 
     def gauge(self, stat, value, sample_rate=1):
         """
