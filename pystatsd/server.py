@@ -43,7 +43,7 @@ class Server(object):
                  ganglia_host='localhost', ganglia_port=8649, ganglia_spoof_host='statd:statd',
                  graphite_host='localhost', graphite_port=2003,
                  flush_interval=10000, no_aggregate_counters = False, counters_prefix = 'stats',
-                 timers_prefix = 'stats.timers'):
+                 timers_prefix = 'stats.timers', all_counts_prefix = 'stats_count'):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
@@ -63,6 +63,7 @@ class Server(object):
         self.graphite_port = graphite_port
         self.no_aggregate_counters = no_aggregate_counters
         self.counters_prefix = counters_prefix
+        self.all_counts_prefix = all_counts_prefix
         self.timers_prefix = timers_prefix
         self.debug = debug
 
@@ -107,6 +108,7 @@ class Server(object):
         
         for k, v in self.counters.items():
             v = float(v)
+            all_v = v
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
 
             if self.debug:
@@ -114,6 +116,7 @@ class Server(object):
 
             if self.transport == 'graphite':
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
+                msg += '%s.%s %s %s\n' % (self.all_counts_prefix, k, all_v, ts)
                 stat_string += msg
             else:
                 # We put counters in _counters group. Underscore is to make sure counters show up
@@ -224,6 +227,7 @@ class ServerDaemon(Daemon):
                         flush_interval = options.flush_interval,
                         no_aggregate_counters = options.no_aggregate_counters,
                         counters_prefix = options.counters_prefix,
+                        all_counts_prefix = options.all_counts_prefix,
                         timers_prefix = options.timers_prefix)
         
         server.serve(options.name, options.port)
@@ -245,6 +249,7 @@ def run_server():
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
     parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: stats)', type=str, default='stats')
     parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: stats.timers)', type=str, default='stats.timers')
+    parser.add_argument('--all-counts-prefix', dest='all_counts_prefix', help='prefix to append before sending absolute counts to graphite (default: stats_count)', type=str, default='stats_counts')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
     parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
     parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
