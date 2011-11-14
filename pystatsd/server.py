@@ -1,5 +1,5 @@
 import re
-from socket import AF_INET, SOCK_DGRAM, socket
+from socket import AF_INET, SOCK_DGRAM, error, socket
 import threading
 import time
 import types
@@ -174,9 +174,14 @@ class Server(object):
             
             stat_string += "statsd.numStats %s %d\n" % (stats, ts)
             graphite = socket()
-            graphite.connect((self.graphite_host, self.graphite_port))
-            graphite.sendall(stat_string)
-            graphite.close()
+            try:
+                graphite.connect((self.graphite_host, self.graphite_port))
+                graphite.sendall(stat_string)
+                graphite.close()
+            except error, e:
+                log.error("Error communicating with Graphite: %s" % e)
+                if self.debug:
+                    print "Error communicating with Graphite: %s" % e
         
         self._set_timer()
 
