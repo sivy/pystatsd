@@ -1,9 +1,9 @@
-# config file template for pystatd.
-# copy this to /etc/default/pystatad and the included upstart or init.d script,
+# config file template for pystatsd.
+# copy this to /etc/default/pystatsd and the included upstart or init.d script,
 # will read daemon settings from this file
 #
-LOCAL_PYSTATD_PORT=8125
-PCT=90
-GRAPHITE_HOST=localhost #this is your graphite server
-GRAPHITE_PORT=2003 #port that carbon-cache is running on
-USER=nobody
+LOCAL_PYSTATD_PORT=8125 # port to run on (default: 8125)
+PCT=90                  # stats pct threshold (default: 90)
+GRAPHITE_HOST=localhost # host to connect to graphite on (default: localhost)
+GRAPHITE_PORT=2003      # port to connect to graphite on (default: 2003)
+USER=nobody             # user to run pystatsd as
