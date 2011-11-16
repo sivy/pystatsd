@@ -48,7 +48,7 @@ Troubleshooting
 
 You can see the raw values received by pystatsd by packet sniffing:
 
-    $ sudo ngrep -qd any udp dst port 8125
+    $ sudo ngrep -qd any . udp dst port 8125
 
 You can see the raw values dispatched to carbon by packet sniffing:
 
