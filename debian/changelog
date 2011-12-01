@@ -1,3 +1,12 @@
+python-statsd (1.0-3) UNRELEASED; urgency=low
+
+  [ Aaron Brady ]
+  * Be consistent about pystatsd vs. pystatd
+  * Fix upstart script with correct binary name
+  * Upgrade path for people with the previous package
+
+ -- Aaron Brady <bradya@gmail.com>  Thu, 01 Dec 2011 16:26:25 +0000
+
 python-statsd (1.0-2) UNRELEASED; urgency=low
 
   [ Rob Terhaar ]
