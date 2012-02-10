@@ -96,6 +96,16 @@ class Server(object):
                     self.counters[key] = 0;
                 self.counters[key] += float(fields[0] or 1) * (1 / sample_rate)
 
+    def on_timer(self):
+        """Executes flush(). Ignores any errors to make sure one exception
+        doesn't halt the whole flushing process.
+        """
+        try:
+            self.flush()
+        except Exception as e:
+            log.exception('Error while flushing: %s', e)
+        self._set_timer()
+
     def flush(self):
         ts = int(time.time())
         stats = 0
@@ -177,15 +187,13 @@ class Server(object):
             graphite.connect((self.graphite_host, self.graphite_port))
             graphite.sendall(stat_string)
             graphite.close()
-        
-        self._set_timer()
 
         if self.debug:
             print "\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" % ( stats )
 
 
     def _set_timer(self):
-        self._timer = threading.Timer(self.flush_interval/1000, self.flush)
+        self._timer = threading.Timer(self.flush_interval/1000, self.on_timer)
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
