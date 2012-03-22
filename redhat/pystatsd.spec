@@ -1,12 +1,14 @@
 %if 0%{?rhel} < 6
 %define needs_python24_patching 1
+%else
+%define needs_python24_patching 0
 %endif
 
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           pystatsd
 Version:        0.1.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation of the Statsd client/server
 Group:          Applications/Internet
 License:        Unknown
@@ -23,6 +25,7 @@ BuildRequires:  python-setuptools-devel
 BuildRequires:  python-setuptools
 %endif
 
+Requires: python-argparse >= 1.2
 
 %description
 pystatsd is a client and server implementation of Etsy's brilliant statsd
@@ -61,5 +64,8 @@ rm -rf %{buildroot}
 /etc/init.d/pystatsd
 
 %changelog
+* Fri Mar 02 2012 Justin Burnham <jburnham@mediatemple.net> - 0.1.7-2
+- Add python-argparse requires.
+- Add init file to MANIFEST.in for setup.py sdist.
 * Thu Oct 07 2011 Sharif Nassar <sharif@mediatemple.net> - 0.1.7-1
 - Initial package
