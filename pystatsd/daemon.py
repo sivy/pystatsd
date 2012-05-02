@@ -33,7 +33,7 @@ class Daemon(object):
         # Disconnect from parent environment.
         os.chdir('/')
         os.setsid()
-        os.umask(0)
+        os.umask(0022)
 
         # Fork again.
         try:
