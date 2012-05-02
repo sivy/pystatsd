@@ -39,7 +39,7 @@ Upstart is the daemon management system for Ubuntu, and it's really great!
 A basic upstart script has been included for the pystatd server. It's located 
 under init/, and will be installed to /usr/share/doc if you build/install a 
 .deb file. The upstart script should be copied to /etc/init/pystatd.conf and 
-will read configuration variables from /etc/default/pystatd. By default the 
+will read configuration variables from /etc/default/pystatd. By default, the 
 pystatd daemon runs as user 'nobody' which is a good thing from a security 
 perspective. 
 
