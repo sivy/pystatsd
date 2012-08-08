@@ -34,7 +34,7 @@ To build a debian package, run `dpkg-buildpackage -rfakeroot`
 
 Upstart init Script
 -------------
-Upstart is the daemon management system for Ubuntu, and it's really great!
+Upstart is the daemon management system for Ubuntu.
 
 A basic upstart script has been included for the pystatd server. It's located 
 under init/, and will be installed to /usr/share/doc if you build/install a 
