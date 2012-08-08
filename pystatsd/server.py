@@ -26,7 +26,7 @@ def _clean_key(k):
         re.sub(
             r'\s+',
             '_',
-            k.replace('/','-').replace(' ','_')
+            k.replace('/', '-').replace(' ', '_')
         )
     )
 
@@ -37,13 +37,15 @@ TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 %(prefix)s.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 '''
 
+
 class Server(object):
-    
-    def __init__(self, pct_threshold=90, debug=False, transport = 'graphite',
+
+    def __init__(self, pct_threshold=90, debug=False, transport='graphite',
                  ganglia_host='localhost', ganglia_port=8649, ganglia_spoof_host='statd:statd',
                  graphite_host='localhost', graphite_port=2003,
-                 flush_interval=10000, no_aggregate_counters = False, counters_prefix = 'stats',
-                 timers_prefix = 'stats.timers'):
+                 flush_interval=10000, no_aggregate_counters=False,
+                 counters_prefix='stats',
+                 timers_prefix='stats.timers'):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
@@ -54,7 +56,7 @@ class Server(object):
         self.ganglia_protocol = "udp"
         # Set DMAX to flush interval plus 20%. That should avoid metrics to prematurely expire if there is
         # some type of a delay when flushing
-        self.dmax = int ( self.flush_interval * 1.2 ) 
+        self.dmax = int(self.flush_interval * 1.2)
         # What hostname should these metrics be attached to.
         self.ganglia_spoof_host = ganglia_spoof_host
 
@@ -79,9 +81,9 @@ class Server(object):
             bits.append(0)
 
         for bit in bits:
-            sample_rate = 1;
+            sample_rate = 1
             fields = bit.split('|')
-            if None==fields[1]:
+            if None == fields[1]:
                 log.error('Bad line: %s' % bit)
                 return
 
@@ -93,24 +95,24 @@ class Server(object):
                 if len(fields) == 3:
                     sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
                 if key not in self.counters:
-                    self.counters[key] = 0;
+                    self.counters[key] = 0
                 self.counters[key] += float(fields[0] or 1) * (1 / sample_rate)
 
     def flush(self):
         ts = int(time.time())
         stats = 0
-        
+
         if self.transport == 'graphite':
             stat_string = ''
         else:
             g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
-        
+
         for k, v in self.counters.items():
             v = float(v)
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
 
             if self.debug:
-                print "Sending %s => count=%s" % ( k, v )
+                print "Sending %s => count=%s" % (k, v)
 
             if self.transport == 'graphite':
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
@@ -143,14 +145,14 @@ class Server(object):
                 self.timers[k] = []
 
                 if self.debug:
-                    print "Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" % ( k, min, mean, max, self.pct_threshold, max_threshold, count )
+                    print "Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" % (k, min, mean, max, self.pct_threshold, max_threshold, count)
 
                 if self.transport == 'graphite':
 
                     stat_string += TIMER_MSG % {
-                        'prefix':self.timers_prefix,
-                        'key':k,
-                        'mean':mean,
+                        'prefix': self.timers_prefix,
+                        'key': k,
+                        'mean': mean,
                         'max': max,
                         'min': min,
                         'count': count,
@@ -158,7 +160,7 @@ class Server(object):
                         'pct_threshold': self.pct_threshold,
                         'ts': ts,
                     }
-                    
+
                 else:
                     # What group should these metrics be in. For the time being we'll set it to the name of the key
                     group = k
@@ -166,12 +168,12 @@ class Server(object):
                     g.send(k + "_mean", mean, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                     g.send(k + "_upper", max, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                     g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_" + str(self.pct_threshold) +"pct", max_threshold, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    
+                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+
                 stats += 1
 
         if self.transport == 'graphite':
-            
+
             stat_string += "statsd.numStats %s %d\n" % (stats, ts)
             graphite = socket.socket()
             try:
@@ -182,24 +184,25 @@ class Server(object):
                 log.error("Error communicating with Graphite: %s" % e)
                 if self.debug:
                     print "Error communicating with Graphite: %s" % e
-        
+
         self._set_timer()
 
         if self.debug:
-            print "\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" % ( stats )
-
+            print "\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" % (stats)
 
     def _set_timer(self):
-        self._timer = threading.Timer(self.flush_interval/1000, self.flush)
+        self._timer = threading.Timer(self.flush_interval / 1000, self.flush)
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
+        log.info('pystatsd-server starting up...')
         assert type(port) is types.IntType, 'port is not an integer: %s' % (port)
         addr = (hostname, port)
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.bind(addr)
 
         import signal
+
         def signal_handler(signal, frame):
                 self.stop()
         signal.signal(signal.SIGINT, signal_handler)
@@ -210,6 +213,7 @@ class Server(object):
             self.process(data)
 
     def stop(self):
+        log.info('pystatsd-server shutting down...')
         self._timer.cancel()
         self._sock.close()
 
@@ -218,20 +222,21 @@ class ServerDaemon(Daemon):
     def run(self, options):
         if setproctitle:
             setproctitle('pystatsd')
-        server = Server(pct_threshold = options.pct,
-                        debug = options.debug,
-                        transport = options.transport,
-                        graphite_host = options.graphite_host,
-                        graphite_port = options.graphite_port,
-                        ganglia_host = options.ganglia_host,
-                        ganglia_spoof_host = options.ganglia_spoof_host,
-                        ganglia_port = options.ganglia_port,
-                        flush_interval = options.flush_interval,
-                        no_aggregate_counters = options.no_aggregate_counters,
-                        counters_prefix = options.counters_prefix,
-                        timers_prefix = options.timers_prefix)
-        
+        server = Server(pct_threshold=options.pct,
+                        debug=options.debug,
+                        transport=options.transport,
+                        graphite_host=options.graphite_host,
+                        graphite_port=options.graphite_port,
+                        ganglia_host=options.ganglia_host,
+                        ganglia_spoof_host=options.ganglia_spoof_host,
+                        ganglia_port=options.ganglia_port,
+                        flush_interval=options.flush_interval,
+                        no_aggregate_counters=options.no_aggregate_counters,
+                        counters_prefix=options.counters_prefix,
+                        timers_prefix=options.timers_prefix)
+
         server.serve(options.name, options.port)
+
 
 def run_server():
     import sys
