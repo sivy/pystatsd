@@ -1,5 +1,5 @@
 import re
-from socket import AF_INET, SOCK_DGRAM, socket
+import socket
 import threading
 import time
 import types
@@ -173,10 +173,15 @@ class Server(object):
         if self.transport == 'graphite':
             
             stat_string += "statsd.numStats %s %d\n" % (stats, ts)
-            graphite = socket()
-            graphite.connect((self.graphite_host, self.graphite_port))
-            graphite.sendall(stat_string)
-            graphite.close()
+            graphite = socket.socket()
+            try:
+                graphite.connect((self.graphite_host, self.graphite_port))
+                graphite.sendall(stat_string)
+                graphite.close()
+            except socket.error, e:
+                log.error("Error communicating with Graphite: %s" % e)
+                if self.debug:
+                    print "Error communicating with Graphite: %s" % e
         
         self._set_timer()
 
@@ -191,7 +196,7 @@ class Server(object):
     def serve(self, hostname='', port=8125):
         assert type(port) is types.IntType, 'port is not an integer: %s' % (port)
         addr = (hostname, port)
-        self._sock = socket(AF_INET, SOCK_DGRAM)
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.bind(addr)
 
         import signal
