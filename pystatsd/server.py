@@ -102,7 +102,7 @@ class Server(object):
         
         if self.transport == 'graphite':
             stat_string = ''
-        else:
+        elif self.transport == 'ganglia':
             g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
         
         for k, v in self.counters.items():
@@ -115,7 +115,7 @@ class Server(object):
             if self.transport == 'graphite':
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
                 stat_string += msg
-            else:
+            elif self.transport == 'ganglia':
                 # We put counters in _counters group. Underscore is to make sure counters show up
                 # first in the GUI. Change below if you disagree
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
@@ -159,7 +159,7 @@ class Server(object):
                         'ts': ts,
                     }
                     
-                else:
+                elif self.transport == 'ganglia':
                     # What group should these metrics be in. For the time being we'll set it to the name of the key
                     group = k
                     g.send(k + "_lower", min, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
