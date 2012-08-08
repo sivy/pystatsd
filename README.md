@@ -43,3 +43,13 @@ will read configuration variables from /etc/default/pystatd. By default the
 pystatd daemon runs as user 'nobody' which is a good thing from a security 
 perspective. 
 
+Troubleshooting
+-------------
+
+You can see the raw values received by pystatsd by packet sniffing:
+
+    $ sudo ngrep -qd any . udp dst port 8125
+
+You can see the raw values dispatched to carbon by packet sniffing:
+
+    $ sudo ngrep -qd any stats tcp dst port 2003
