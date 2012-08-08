@@ -1,13 +1,13 @@
-# pystatd upstart script
+# pystatsd upstart script
 # 2011 - rob@atlanticdynamic.com
-# copy this to /etc/init/pystatd.conf 
+#   Copy this to /etc/init/pystatsd.conf
 #
 
-description "start and stop the py-statd server"
-version "1.1"
+description "start and stop the py-statsd server"
+version "1.2"
 author "Rob Terhaar"
 
-description "py-statd server"
+description "py-statsd server"
 respawn limit 15 5
 #oom never
 
@@ -18,12 +18,12 @@ stop on shutdown
 respawn
 
 pre-start script
-  . /etc/default/pystatd
+  . /etc/default/pystatsd
 end script
 
 script
-  . /etc/default/pystatd
-  exec su -s /bin/sh -c "/usr/bin/pystatd-server \
+  . /etc/default/pystatsd
+  exec su -s /bin/sh -c "/usr/bin/pystatsd-server \
 --port $LOCAL_PYSTATD_PORT \
 --pct $PCT \
 --graphite-host $GRAPHITE_HOST \
