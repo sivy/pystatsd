@@ -1,8 +1,10 @@
 Introduction
 ------------
 
-pystatsd is a client and server implementation of Etsy's brilliant statsd
+**pystatsd** is a client and server implementation of Etsy's brilliant statsd
 server, a front end/proxy for the Graphite stats collection and graphing server.
+
+**pystatsd** has [been tested on](http://travis-ci.org/sivy/py-statsd) python 2.5, 2.6, and 2.7.
 
 * Graphite
     - http://graphite.wikidot.com
@@ -16,6 +18,7 @@ Status
 Reviewing and merging pull requests, bringing stuff up to date, now with tests!
 
 [![Build Status](https://secure.travis-ci.org/sivy/py-statsd.png?branch=master)](http://travis-ci.org/sivy/py-statsd)
+
 
 
 Usage
