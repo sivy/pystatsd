@@ -42,9 +42,10 @@ TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 class Server(object):
 
     def __init__(self, pct_threshold=90, debug=False, transport='graphite',
-                 ganglia_host='localhost', ganglia_port=8649, ganglia_spoof_host='statd:statd',
-                 graphite_host='localhost', graphite_port=2003,
-                 flush_interval=10000, no_aggregate_counters=False, counters_prefix='stats',
+                 ganglia_host='localhost', ganglia_port=8649,
+                 ganglia_spoof_host='statd:statd', graphite_host='localhost',
+                 graphite_port=2003, flush_interval=10000,
+                 no_aggregate_counters=False, counters_prefix='stats',
                  timers_prefix='stats.timers'):
         self.buf = 8192
         self.flush_interval = flush_interval
