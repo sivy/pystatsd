@@ -1,14 +1,22 @@
 Introduction
 ------------
 
-pystatsd is a client and server implementation of Etsy's brilliant statsd 
+pystatsd is a client and server implementation of Etsy's brilliant statsd
 server, a front end/proxy for the Graphite stats collection and graphing server.
 
 * Graphite
     - http://graphite.wikidot.com
-* Statsd 
+* Statsd
     - code: https://github.com/etsy/statsd
     - blog post: http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/
+
+Status
+-------------
+
+Reviewing and merging pull requests, bringing stuff up to date, now with tests!
+
+[![Build Status](https://secure.travis-ci.org/sivy/py-statsd.png?branch=master)](http://travis-ci.org/sivy/py-statsd)
+
 
 Usage
 -------------
@@ -36,12 +44,12 @@ Upstart init Script
 -------------
 Upstart is the daemon management system for Ubuntu.
 
-A basic upstart script has been included for the pystatd server. It's located 
-under init/, and will be installed to /usr/share/doc if you build/install a 
-.deb file. The upstart script should be copied to /etc/init/pystatd.conf and 
-will read configuration variables from /etc/default/pystatd. By default the 
-pystatd daemon runs as user 'nobody' which is a good thing from a security 
-perspective. 
+A basic upstart script has been included for the pystatd server. It's located
+under init/, and will be installed to /usr/share/doc if you build/install a
+.deb file. The upstart script should be copied to /etc/init/pystatd.conf and
+will read configuration variables from /etc/default/pystatd. By default the
+pystatd daemon runs as user 'nobody' which is a good thing from a security
+perspective.
 
 Troubleshooting
 -------------
