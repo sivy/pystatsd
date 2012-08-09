@@ -8,6 +8,7 @@ import socket
 import random
 import time
 
+
 # Sends statistics to the stats daemon over UDP
 class Client(object):
 
@@ -34,7 +35,6 @@ class Client(object):
         >>> statsd_client.timing_since('some.time', start)
         """
         self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
-
 
     def timing(self, stat, time, sample_rate=1):
         """
@@ -84,7 +84,7 @@ class Client(object):
                 return
             sampled_data = dict((stat, "%s|@%s" % (value, sample_rate)) for stat, value in data.iteritems())
         else:
-            sampled_data=data
+            sampled_data = data
 
         try:
             [self.udp_sock.sendto("%s:%s" % (stat, value), addr) for stat, value in sampled_data.iteritems()]
