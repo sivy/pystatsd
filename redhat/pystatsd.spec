@@ -58,12 +58,15 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc README
+%doc README.md
 %{python_sitelib}/*
 /usr/bin/pystatsd-server
 /etc/init.d/pystatsd
 
 %changelog
+* Wed Aug 15 2012 Bruno Clermont <bruno.clermont@gmail.com> - 0.1.7-3
+- update to 36a59d3b126ded4658aff25bce94e844a1c6413e
+- Fix path to README file
 * Fri Mar 02 2012 Justin Burnham <jburnham@mediatemple.net> - 0.1.7-2
 - Add python-argparse requires.
 - Add init file to MANIFEST.in for setup.py sdist.
