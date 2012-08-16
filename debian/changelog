@@ -1,3 +1,10 @@
+python-statsd (1.0-4) testing; urgency=low
+
+  * update to 36a59d3b126ded4658aff25bce94e844a1c6413e
+  * Fix path to README file
+
+ -- Bruno Clermont <bruno.clermont@gmail.com>  Wed, 15 Aug 2012 15:01:00 +0200
+
 python-statsd (1.0-2) UNRELEASED; urgency=low
 
   [ Rob Terhaar ]
