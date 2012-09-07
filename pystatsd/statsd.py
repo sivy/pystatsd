@@ -44,6 +44,14 @@ class Client(object):
         stats = {stat: "%f|ms" % time}
         self.send(stats, sample_rate)
 
+    def gauge(self, stat, value, sample_rate=1):
+        """
+        Log gauge information for a single stat
+        >>> statsd_client.gauge('some.gauge',42)
+        """
+        stats = {stat: "%f|g" % value}
+        self.send(stats, sample_rate)
+
     def increment(self, stats, sample_rate=1):
         """
         Increments one or more stats counters
