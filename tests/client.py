@@ -1,6 +1,7 @@
 import time
 import unittest2
 import mock
+import socket
 
 from pystatsd.statsd import Client
 
