@@ -17,14 +17,14 @@ class ClientBasicsTestCase(unittest2.TestCase):
         self.patchers.append(socket_patcher)
 
         self.client = Client()
-        self.addr = (self.client.host, self.client.port)
+        self.addr = (socket.gethostbyname(self.client.host), self.client.port)
 
     def test_client_create(self):
         client = Client(
-            host='stats.example.com',
+            host='example.com',
             port=8888,
             prefix='pystatsd.tests')
-        self.assertEqual(client.host, 'stats.example.com')
+        self.assertEqual(client.host, 'example.com')
         self.assertEqual(client.port, 8888)
         self.assertEqual(client.prefix, 'pystatsd.tests')
 
