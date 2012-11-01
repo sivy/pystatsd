@@ -28,6 +28,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
         self.assertEqual(client.host, 'example.com')
         self.assertEqual(client.port, 8888)
         self.assertEqual(client.prefix, 'pystatsd.tests')
+        self.assertEqual(client.addr, self.addr)
 
     def test_basic_client_incr(self):
         stat = 'pystatsd.unittests.test_basic_client_incr'
