@@ -71,6 +71,7 @@ class Server(object):
 
         self.counters = {}
         self.timers = {}
+        self.gauges = {}
         self.flusher = 0
 
     def process(self, data):
@@ -92,6 +93,8 @@ class Server(object):
                 if key not in self.timers:
                     self.timers[key] = []
                 self.timers[key].append(float(fields[0] or 0))
+            elif (fields[1] == 'g'):
+                self.gauges[key] = float(fields[0])
             else:
                 if len(fields) == 3:
                     sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
@@ -124,6 +127,24 @@ class Server(object):
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
 
             self.counters[k] = 0
+            stats += 1
+
+        for k, v in self.gauges.items():
+            v = float(v)
+
+            if self.debug:
+                print "Sending %s => count=%s" % (k, v)
+
+            if self.transport == 'graphite':
+                # note: counters and gauges implicitly end up in the same namespace
+                msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
+                stat_string += msg
+            else:
+                # This is a clone of the counter behaviour above.
+                # It is likely very wrong, but we don't use ganglia,
+                # so if you do, fix it as needed
+                g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
+
             stats += 1
 
         for k, v in self.timers.items():
@@ -258,7 +279,7 @@ def run_server():
     parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: stats.timers)', type=str, default='stats.timers')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
     parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
-    parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
+    parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/var/run/pystatsd.pid')
     parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
     parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
     options = parser.parse_args(sys.argv[1:])
