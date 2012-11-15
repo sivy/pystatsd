@@ -258,7 +258,7 @@ def run_server():
     parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: stats.timers)', type=str, default='stats.timers')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
     parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
-    parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/tmp/pystatsd.pid')
+    parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/var/run/pystatsd.pid')
     parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
     parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
     options = parser.parse_args(sys.argv[1:])
