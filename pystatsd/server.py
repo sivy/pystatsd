@@ -5,6 +5,7 @@ import time
 import types
 import logging
 import gmetric
+from subprocess import call
 # from xdrlib import Packer, Unpacker
 
 log = logging.getLogger(__name__)
@@ -31,6 +32,8 @@ def _clean_key(k):
         )
     )
 
+
+
 TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 %(prefix)s.%(key)s.count %(count)s %(ts)s
 %(prefix)s.%(key)s.mean %(mean)s %(ts)s
@@ -43,18 +46,22 @@ class Server(object):
 
     def __init__(self, pct_threshold=90, debug=False, transport='graphite',
                  ganglia_host='localhost', ganglia_port=8649,
-                 ganglia_spoof_host='statd:statd', graphite_host='localhost',
-                 graphite_port=2003, flush_interval=10000,
+                 ganglia_spoof_host='statsd:statsd',
+                 gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
+                 graphite_host='localhost', graphite_port=2003, flush_interval=10000,
                  no_aggregate_counters=False, counters_prefix='stats',
                  timers_prefix='stats.timers'):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
         self.transport = transport
-        # Ganglia specific settings
+        # Embedded Ganglia library options specific settings
         self.ganglia_host = ganglia_host
         self.ganglia_port = ganglia_port
         self.ganglia_protocol = "udp"
+        # Use gmetric
+        self.gmetric_exec = gmetric_exec
+        self.gmetric_options = gmetric_options
         # Set DMAX to flush interval plus 20%. That should avoid metrics to prematurely expire if there is
         # some type of a delay when flushing
         self.dmax = int(self.flush_interval * 1.2)
@@ -73,6 +80,9 @@ class Server(object):
         self.timers = {}
         self.gauges = {}
         self.flusher = 0
+
+    def send_to_ganglia_using_gmetric(self,k,v,group):
+        call([self.gmetric_exec, self.gmetric_options, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])    
 
     def process(self, data):
         bits = data.split(':')
@@ -108,7 +118,7 @@ class Server(object):
 
         if self.transport == 'graphite':
             stat_string = ''
-        else:
+        elif self.transport == 'ganglia':
             g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
 
         for k, v in self.counters.items():
@@ -121,11 +131,14 @@ class Server(object):
             if self.transport == 'graphite':
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
                 stat_string += msg
-            else:
+            elif self.transport == 'ganglia':
                 # We put counters in _counters group. Underscore is to make sure counters show up
                 # first in the GUI. Change below if you disagree
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
+            elif self.transport == 'ganglia-gmetric':
+                self.send_to_ganglia_using_gmetric(k,v, "_counters")
 
+            # Zero out the counters once the data is sent
             self.counters[k] = 0
             stats += 1
 
@@ -139,11 +152,10 @@ class Server(object):
                 # note: counters and gauges implicitly end up in the same namespace
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
                 stat_string += msg
-            else:
-                # This is a clone of the counter behaviour above.
-                # It is likely very wrong, but we don't use ganglia,
-                # so if you do, fix it as needed
+            elif self.transport == 'ganglia':
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
+            elif self.transport == 'ganglia-gmetric':
+                self.send_to_ganglia_using_gmetric(k,v, "_gauges")
 
             stats += 1
 
@@ -184,14 +196,25 @@ class Server(object):
                         'ts': ts,
                     }
 
-                else:
+                elif self.transport == 'ganglia':
+                    # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
+                    # 3521 k ms which is 3.521 seconds
                     # What group should these metrics be in. For the time being we'll set it to the name of the key
                     group = k
-                    g.send(k + "_lower", min, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_mean", mean, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_upper", max, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_min", min / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_mean", mean / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_max", max / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                     g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                elif self.transport == 'ganglia-gmetric':
+                    # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
+                    # 3521 k ms which is 3.521 seconds
+                    group = k
+                    self.send_to_ganglia_using_gmetric(k + "_mean", mean / 1000, group)
+                    self.send_to_ganglia_using_gmetric(k + "_min",  min / 1000 , group)
+                    self.send_to_ganglia_using_gmetric(k + "_max",  max / 1000, group)
+                    self.send_to_ganglia_using_gmetric(k + "_count", count , group)
+                    self.send_to_ganglia_using_gmetric(k + "_" + str(self.pct_threshold) + "pct",  max_threshold / 1000, group)
 
                 stats += 1
 
@@ -252,6 +275,8 @@ class ServerDaemon(Daemon):
                         ganglia_host=options.ganglia_host,
                         ganglia_spoof_host=options.ganglia_spoof_host,
                         ganglia_port=options.ganglia_port,
+                        gmetric_exec=options.gmetric_exec,
+                        gmetric_options=options.gmetric_options,
                         flush_interval=options.flush_interval,
                         no_aggregate_counters=options.no_aggregate_counters,
                         counters_prefix=options.counters_prefix,
@@ -267,12 +292,17 @@ def run_server():
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
     parser.add_argument('-n', '--name', dest='name', help='hostname to run on ', default='')
     parser.add_argument('-p', '--port', dest='port', help='port to run on (default: 8125)', type=int, default=8125)
-    parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite or ganglia', type=str, default="graphite")
+    parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite, ganglia (uses embedded library) or ganglia-gmetric (uses gmetric)', type=str, default="graphite")
     parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type=int, default=2003)
     parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
-    parser.add_argument('--ganglia-port', dest='ganglia_port', help='port to connect to ganglia on', type=int, default=8649)
-    parser.add_argument('--ganglia-host', dest='ganglia_host', help='host to connect to ganglia on', type=str, default='localhost')
-    parser.add_argument('--ganglia-spoof-host', dest='ganglia_spoof_host', help='host to report metrics as to ganglia', type=str, default='statd:statd')
+    # Uses embedded Ganglia Library
+    parser.add_argument('--ganglia-port', dest='ganglia_port', help='Unicast port to connect to ganglia on', type=int, default=8649)
+    parser.add_argument('--ganglia-host', dest='ganglia_host', help='Unicast host to connect to ganglia on', type=str, default='localhost')
+    parser.add_argument('--ganglia-spoof-host', dest='ganglia_spoof_host', help='host to report metrics as to ganglia', type=str, default='statsd:statsd')
+    # Use gmetric
+    parser.add_argument('--ganglia-gmetric-exec', dest='gmetric_exec', help='Use gmetric executable. Defaults to /usr/bin/gmetric', type=str, default="/usr/bin/gmetric")
+    parser.add_argument('--ganglia-gmetric-options', dest='gmetric_options', help='Options to pass to gmetric. Defaults to -d 60', type=str, default="-d 60")
+    # 
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
     parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: stats)', type=str, default='stats')
