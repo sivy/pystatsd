@@ -1,6 +1,7 @@
 import time
 import unittest2
 import mock
+import socket
 
 from pystatsd.statsd import Client
 
@@ -17,16 +18,19 @@ class ClientBasicsTestCase(unittest2.TestCase):
         self.patchers.append(socket_patcher)
 
         self.client = Client()
-        self.addr = (self.client.host, self.client.port)
+        self.addr = (socket.gethostbyname(self.client.host), self.client.port)
 
     def test_client_create(self):
+        host, port = ('example.com', 8888)
+
         client = Client(
-            host='stats.example.com',
-            port=8888,
+            host=host,
+            port=port,
             prefix='pystatsd.tests')
-        self.assertEqual(client.host, 'stats.example.com')
-        self.assertEqual(client.port, 8888)
+        self.assertEqual(client.host, host)
+        self.assertEqual(client.port, port)
         self.assertEqual(client.prefix, 'pystatsd.tests')
+        self.assertEqual(client.addr, (socket.gethostbyname(host), port))
 
     def test_basic_client_incr(self):
         stat = 'pystatsd.unittests.test_basic_client_incr'
