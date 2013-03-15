@@ -23,6 +23,7 @@ class Client(object):
         """
         self.host = host
         self.port = int(port)
+        self.addr = (socket.gethostbyname(self.host), self.port)
         self.prefix = prefix
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -82,7 +83,6 @@ class Client(object):
         """
         Squirt the metrics over UDP
         """
-        addr = (self.host, self.port)
 
         if self.prefix:
             data = dict((".".join((self.prefix, stat)), value) for stat, value in data.iteritems())
@@ -95,6 +95,6 @@ class Client(object):
             sampled_data = data
 
         try:
-            [self.udp_sock.sendto("%s:%s" % (stat, value), addr) for stat, value in sampled_data.iteritems()]
+            [self.udp_sock.sendto("%s:%s" % (stat, value), self.addr) for stat, value in sampled_data.iteritems()]
         except:
             self.log.exception("unexpected error")
