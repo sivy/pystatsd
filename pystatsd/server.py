@@ -81,8 +81,8 @@ class Server(object):
         self.gauges = {}
         self.flusher = 0
 
-    def send_to_ganglia_using_gmetric(self,k,v,group):
-        call([self.gmetric_exec, self.gmetric_options, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])    
+    def send_to_ganglia_using_gmetric(self,k,v,group, units):
+        call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])    
 
     def process(self, data):
         bits = data.split(':')
@@ -136,7 +136,7 @@ class Server(object):
                 # first in the GUI. Change below if you disagree
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
             elif self.transport == 'ganglia-gmetric':
-                self.send_to_ganglia_using_gmetric(k,v, "_counters")
+                self.send_to_ganglia_using_gmetric(k,v, "_counters", "count")
 
             # Zero out the counters once the data is sent
             self.counters[k] = 0
@@ -155,7 +155,7 @@ class Server(object):
             elif self.transport == 'ganglia':
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
             elif self.transport == 'ganglia-gmetric':
-                self.send_to_ganglia_using_gmetric(k,v, "_gauges")
+                self.send_to_ganglia_using_gmetric(k,v, "_gauges", "gauge")
 
             stats += 1
 
@@ -201,20 +201,20 @@ class Server(object):
                     # 3521 k ms which is 3.521 seconds
                     # What group should these metrics be in. For the time being we'll set it to the name of the key
                     group = k
-                    g.send(k + "_min", min / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_mean", mean / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_max", max / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_min", min / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_mean", mean / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_max", max / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                     g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold / 1000, "double", "time", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                 elif self.transport == 'ganglia-gmetric':
                     # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
                     # 3521 k ms which is 3.521 seconds
                     group = k
-                    self.send_to_ganglia_using_gmetric(k + "_mean", mean / 1000, group)
-                    self.send_to_ganglia_using_gmetric(k + "_min",  min / 1000 , group)
-                    self.send_to_ganglia_using_gmetric(k + "_max",  max / 1000, group)
-                    self.send_to_ganglia_using_gmetric(k + "_count", count , group)
-                    self.send_to_ganglia_using_gmetric(k + "_" + str(self.pct_threshold) + "pct",  max_threshold / 1000, group)
+                    self.send_to_ganglia_using_gmetric(k + "_mean", mean / 1000, group, "seconds")
+                    self.send_to_ganglia_using_gmetric(k + "_min",  min / 1000 , group, "seconds")
+                    self.send_to_ganglia_using_gmetric(k + "_max",  max / 1000, group, "seconds")
+                    self.send_to_ganglia_using_gmetric(k + "_count", count , group, "count")
+                    self.send_to_ganglia_using_gmetric(k + "_" + str(self.pct_threshold) + "pct",  max_threshold / 1000, group, "seconds")
 
                 stats += 1
 
