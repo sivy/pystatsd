@@ -55,13 +55,16 @@ class Client(object):
         data = dict((stat, "%f|ms" % time) for stat in stats)
         self.send(data, sample_rate)
 
-    def gauge(self, stat, value, sample_rate=1):
+    def gauge(self, stats, value, sample_rate=1):
         """
         Log gauge information for a single stat
         >>> statsd_client.gauge('some.gauge',42)
         """
-        stats = {stat: "%f|g" % value}
-        self.send(stats, sample_rate)
+        if not isinstance(stats, list):
+            stats = [stats]
+
+        data = dict((stat, "%f|g" % value) for stat in stats)
+        self.send(data, sample_rate)
 
     def increment(self, stats, sample_rate=1):
         """
