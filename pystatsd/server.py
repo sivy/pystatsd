@@ -50,7 +50,7 @@ class Server(object):
                  gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
                  graphite_host='localhost', graphite_port=2003, flush_interval=10000,
                  no_aggregate_counters=False, counters_prefix='stats',
-                 timers_prefix='stats.timers'):
+                 timers_prefix='stats.timers', expire=0):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
@@ -75,6 +75,7 @@ class Server(object):
         self.counters_prefix = counters_prefix
         self.timers_prefix = timers_prefix
         self.debug = debug
+        self.expire = expire
 
         self.counters = {}
         self.timers = {}
@@ -87,6 +88,7 @@ class Server(object):
     def process(self, data):
         bits = data.split(':')
         key = _clean_key(bits[0])
+        ts = int(time.time())
 
         del bits[0]
         if len(bits) == 0:
@@ -101,16 +103,18 @@ class Server(object):
 
             if (fields[1] == 'ms'):
                 if key not in self.timers:
-                    self.timers[key] = []
-                self.timers[key].append(float(fields[0] or 0))
+                    self.timers[key] = [ [], ts ]
+                self.timers[key][0].append(float(fields[0] or 0))
+                self.timers[key][1] = ts
             elif (fields[1] == 'g'):
-                self.gauges[key] = float(fields[0])
+                self.gauges[key] = [ float(fields[0]), ts ]
             else:
                 if len(fields) == 3:
                     sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
                 if key not in self.counters:
-                    self.counters[key] = 0
-                self.counters[key] += float(fields[0] or 1) * (1 / sample_rate)
+                    self.counters[key] = [ 0, ts ]
+                self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
+                self.counters[key][1] = ts
 
     def flush(self):
         ts = int(time.time())
@@ -121,7 +125,12 @@ class Server(object):
         elif self.transport == 'ganglia':
             g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
 
-        for k, v in self.counters.items():
+        for k, (v, t) in self.counters.items():
+            if self.expire > 0 and t + self.expire < ts:
+                if self.debug:
+                    print "Expiring counter %s (age: %s)" % (k, ts -t)
+                del(self.counters[k])
+                continue
             v = float(v)
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
 
@@ -142,7 +151,12 @@ class Server(object):
             self.counters[k] = 0
             stats += 1
 
-        for k, v in self.gauges.items():
+        for k, (v, t) in self.gauges.items():
+            if self.expire > 0 and t + self.expire < ts:
+                if self.debug:
+                    print "Expiring gauge %s (age: %s)" % (k, ts - t)
+                del(self.gauges[k])
+                continue
             v = float(v)
 
             if self.debug:
@@ -159,7 +173,12 @@ class Server(object):
 
             stats += 1
 
-        for k, v in self.timers.items():
+        for k, (v, t) in self.timers.items():
+            if self.expire > 0 and t + self.expire < ts:
+                if self.debug:
+                    print "Expiring gauge %s (age: %s)" % (k, ts - t)
+                del(self.timers[k])
+                continue
             if len(v) > 0:
                 # Sort all the received values. We need it to extract percentiles
                 v.sort()
@@ -280,7 +299,8 @@ class ServerDaemon(Daemon):
                         flush_interval=options.flush_interval,
                         no_aggregate_counters=options.no_aggregate_counters,
                         counters_prefix=options.counters_prefix,
-                        timers_prefix=options.timers_prefix)
+                        timers_prefix=options.timers_prefix,
+                        expire=options.expire)
 
         server.serve(options.name, options.port)
 
@@ -312,6 +332,7 @@ def run_server():
     parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/var/run/pystatsd.pid')
     parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
     parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
+    parser.add_argument('--expire', dest='expire', help='time-to-live for old stats (in secs)', type=int, default=0)
     options = parser.parse_args(sys.argv[1:])
 
     daemon = ServerDaemon(options.pidfile)
