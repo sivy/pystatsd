@@ -148,7 +148,7 @@ class Server(object):
                 self.send_to_ganglia_using_gmetric(k,v, "_counters", "count")
 
             # Zero out the counters once the data is sent
-            self.counters[k] = 0
+            self.counters[k] = [0, int(time.time())]
             stats += 1
 
         for k, (v, t) in self.gauges.items():
