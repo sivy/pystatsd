@@ -86,6 +86,7 @@ class Server(object):
         call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])    
 
     def process(self, data):
+        data.rstrip('\n')
         bits = data.split(':')
         key = _clean_key(bits[0])
         ts = int(time.time())
