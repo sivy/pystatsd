@@ -87,35 +87,37 @@ class Server(object):
 
     def process(self, data):
         data.rstrip('\n')
-        bits = data.split(':')
-        key = _clean_key(bits[0])
-        ts = int(time.time())
 
-        del bits[0]
-        if len(bits) == 0:
-            bits.append(0)
+        for metric in data.split('\n'):
+            bits = metric.split(':')
+            key = _clean_key(bits[0])
+            ts = int(time.time())
 
-        for bit in bits:
-            sample_rate = 1
-            fields = bit.split('|')
-            if None == fields[1]:
-                log.error('Bad line: %s' % bit)
-                return
+            del bits[0]
+            if len(bits) == 0:
+                bits.append(0)
 
-            if (fields[1] == 'ms'):
-                if key not in self.timers:
-                    self.timers[key] = [ [], ts ]
-                self.timers[key][0].append(float(fields[0] or 0))
-                self.timers[key][1] = ts
-            elif (fields[1] == 'g'):
-                self.gauges[key] = [ float(fields[0]), ts ]
-            else:
-                if len(fields) == 3:
-                    sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
-                if key not in self.counters:
-                    self.counters[key] = [ 0, ts ]
-                self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
-                self.counters[key][1] = ts
+            for bit in bits:
+                sample_rate = 1
+                fields = bit.split('|')
+                if None == fields[1]:
+                    log.error('Bad line: %s' % bit)
+                    return
+
+                if (fields[1] == 'ms'):
+                    if key not in self.timers:
+                        self.timers[key] = [ [], ts ]
+                    self.timers[key][0].append(float(fields[0] or 0))
+                    self.timers[key][1] = ts
+                elif (fields[1] == 'g'):
+                    self.gauges[key] = [ float(fields[0]), ts ]
+                else:
+                    if len(fields) == 3:
+                        sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
+                    if key not in self.counters:
+                        self.counters[key] = [ 0, ts ]
+                    self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
+                    self.counters[key][1] = ts
 
     def flush(self):
         ts = int(time.time())
