@@ -6,6 +6,7 @@ import types
 import logging
 import gmetric
 from subprocess import call
+from warnings import warn
 # from xdrlib import Packer, Unpacker
 
 log = logging.getLogger(__name__)
@@ -111,13 +112,16 @@ class Server(object):
                     self.timers[key][1] = ts
                 elif (fields[1] == 'g'):
                     self.gauges[key] = [ float(fields[0]), ts ]
-                else:
+                elif (fields[1] == 'c'):
                     if len(fields) == 3:
                         sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
                     if key not in self.counters:
                         self.counters[key] = [ 0, ts ]
                     self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
                     self.counters[key][1] = ts
+                else:
+                    warn("Encountered unknown metric type %s in <%s>"
+                        % (fields[1], metric))
 
     def flush(self):
         ts = int(time.time())
