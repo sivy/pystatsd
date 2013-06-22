@@ -202,7 +202,7 @@ class Server(object):
                     total = sum(v)
                     mean = total / count
 
-                self.timers[k] = []
+                del(self.timers[k])
 
                 if self.debug:
                     print "Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
