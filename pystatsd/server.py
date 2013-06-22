@@ -183,7 +183,7 @@ class Server(object):
         for k, (v, t) in self.timers.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
-                    print "Expiring gauge %s (age: %s)" % (k, ts - t)
+                    print "Expiring timer %s (age: %s)" % (k, ts - t)
                 del(self.timers[k])
                 continue
             if len(v) > 0:
