@@ -160,7 +160,7 @@ class Server(object):
             v = float(v)
 
             if self.debug:
-                print "Sending %s => count=%s" % (k, v)
+                print "Sending %s => value=%s" % (k, v)
 
             if self.transport == 'graphite':
                 # note: counters and gauges implicitly end up in the same namespace
