@@ -6,6 +6,7 @@ import types
 import logging
 import gmetric
 from subprocess import call
+from warnings import warn
 # from xdrlib import Packer, Unpacker
 
 log = logging.getLogger(__name__)
@@ -86,35 +87,41 @@ class Server(object):
         call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])    
 
     def process(self, data):
-        bits = data.split(':')
-        key = _clean_key(bits[0])
-        ts = int(time.time())
+        data.rstrip('\n')
 
-        del bits[0]
-        if len(bits) == 0:
-            bits.append(0)
+        for metric in data.split('\n'):
+            bits = metric.split(':')
+            key = _clean_key(bits[0])
+            ts = int(time.time())
 
-        for bit in bits:
-            sample_rate = 1
-            fields = bit.split('|')
-            if None == fields[1]:
-                log.error('Bad line: %s' % bit)
-                return
+            del bits[0]
+            if len(bits) == 0:
+                bits.append(0)
 
-            if (fields[1] == 'ms'):
-                if key not in self.timers:
-                    self.timers[key] = [ [], ts ]
-                self.timers[key][0].append(float(fields[0] or 0))
-                self.timers[key][1] = ts
-            elif (fields[1] == 'g'):
-                self.gauges[key] = [ float(fields[0]), ts ]
-            else:
-                if len(fields) == 3:
-                    sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
-                if key not in self.counters:
-                    self.counters[key] = [ 0, ts ]
-                self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
-                self.counters[key][1] = ts
+            for bit in bits:
+                sample_rate = 1
+                fields = bit.split('|')
+                if None == fields[1]:
+                    log.error('Bad line: %s' % bit)
+                    return
+
+                if (fields[1] == 'ms'):
+                    if key not in self.timers:
+                        self.timers[key] = [ [], ts ]
+                    self.timers[key][0].append(float(fields[0] or 0))
+                    self.timers[key][1] = ts
+                elif (fields[1] == 'g'):
+                    self.gauges[key] = [ float(fields[0]), ts ]
+                elif (fields[1] == 'c'):
+                    if len(fields) == 3:
+                        sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
+                    if key not in self.counters:
+                        self.counters[key] = [ 0, ts ]
+                    self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
+                    self.counters[key][1] = ts
+                else:
+                    warn("Encountered unknown metric type %s in <%s>"
+                        % (fields[1], metric))
 
     def flush(self):
         ts = int(time.time())
@@ -176,7 +183,7 @@ class Server(object):
         for k, (v, t) in self.timers.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
-                    print "Expiring gauge %s (age: %s)" % (k, ts - t)
+                    print "Expiring timer %s (age: %s)" % (k, ts - t)
                 del(self.timers[k])
                 continue
             if len(v) > 0:
@@ -195,7 +202,7 @@ class Server(object):
                     total = sum(v)
                     mean = total / count
 
-                self.timers[k] = []
+                del(self.timers[k])
 
                 if self.debug:
                     print "Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
