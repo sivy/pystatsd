@@ -154,8 +154,8 @@ class Server(object):
             elif self.transport == 'ganglia-gmetric':
                 self.send_to_ganglia_using_gmetric(k,v, "_counters", "count")
 
-            # Zero out the counters once the data is sent
-            self.counters[k] = [0, int(time.time())]
+            # Clear the counter once the data is sent
+            del(self.counters[k])
             stats += 1
 
         for k, (v, t) in self.gauges.items():
@@ -178,6 +178,7 @@ class Server(object):
             elif self.transport == 'ganglia-gmetric':
                 self.send_to_ganglia_using_gmetric(k,v, "_gauges", "gauge")
 
+            del(self.gauges[k])
             stats += 1
 
         for k, (v, t) in self.timers.items():
