@@ -36,6 +36,7 @@ See statsd_test for sample usage:
     sc.timing('python_test.time',500)
     sc.increment('python_test.inc_int')
     sc.decrement('python_test.decr_int')
+    sc.gauge('python_test.gauge', 42)
 
 
 Building a Debian Package
