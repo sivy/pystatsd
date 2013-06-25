@@ -84,44 +84,56 @@ class Server(object):
         self.flusher = 0
 
     def send_to_ganglia_using_gmetric(self,k,v,group, units):
-        call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])    
+        call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])
+
 
     def process(self, data):
+        # the data is a sequence of newline-delimited metrics
+        # a metric is in the form "name:value|rest"  (rest may have more pipes)
         data.rstrip('\n')
 
         for metric in data.split('\n'):
-            bits = metric.split(':')
-            key = _clean_key(bits[0])
-            ts = int(time.time())
+            match = re.match('\A([^:]+):([^|]+)\|(.+)', metric)
 
-            del bits[0]
-            if len(bits) == 0:
-                bits.append(0)
+            if match == None:
+                warn("Skipping malformed metric: <%s>" % (metric))
+                continue
 
-            for bit in bits:
-                sample_rate = 1
-                fields = bit.split('|')
-                if None == fields[1]:
-                    log.error('Bad line: %s' % bit)
-                    return
+            key   = _clean_key( match.group(1) )
+            value = match.group(2)
+            rest  = match.group(3).split('|')
+            mtype = rest.pop(0)
 
-                if (fields[1] == 'ms'):
-                    if key not in self.timers:
-                        self.timers[key] = [ [], ts ]
-                    self.timers[key][0].append(float(fields[0] or 0))
-                    self.timers[key][1] = ts
-                elif (fields[1] == 'g'):
-                    self.gauges[key] = [ float(fields[0]), ts ]
-                elif (fields[1] == 'c'):
-                    if len(fields) == 3:
-                        sample_rate = float(re.match('^@([\d\.]+)', fields[2]).groups()[0])
-                    if key not in self.counters:
-                        self.counters[key] = [ 0, ts ]
-                    self.counters[key][0] += float(fields[0] or 1) * (1 / sample_rate)
-                    self.counters[key][1] = ts
-                else:
-                    warn("Encountered unknown metric type %s in <%s>"
-                        % (fields[1], metric))
+            if   (mtype == 'ms'): self.__record_timer(key, value, rest)
+            elif (mtype == 'g' ): self.__record_gauge(key, value, rest)
+            elif (mtype == 'c' ): self.__record_counter(key, value, rest)
+            else:
+                warn("Encountered unknown metric type in <%s>" % (metric))
+
+    def __record_timer(self, key, value, rest):
+        ts = int(time.time())
+        if key not in self.timers:
+            self.timers[key] = [ [], ts ]
+        self.timers[key][0].append(float(value or 0))
+        self.timers[key][1] = ts
+
+    def __record_gauge(self, key, value, rest):
+        ts = int(time.time())
+        self.gauges[key] = [ float(value), ts ]
+
+    def __record_counter(self, key, value, rest):
+        ts = int(time.time())
+        sample_rate = 1.0
+        if len(rest) == 1:
+            sample_rate = float(re.match('^@([\d\.]+)', rest[0]).group(1))
+            if sample_rate == 0:
+                warn("Ignoring counter with sample rate of zero: <%s>" % (metric))
+                return
+
+        if key not in self.counters:
+            self.counters[key] = [ 0, ts ]
+        self.counters[key][0] += float(value or 1) * (1 / sample_rate)
+        self.counters[key][1] = ts
 
     def flush(self):
         ts = int(time.time())
