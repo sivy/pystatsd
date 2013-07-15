@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+# pystat: A utility script to send metrics to a statsd server.
+
+# pystat makes it easy to send metrics to a statsd server from anywhere,
+# an init script, cron job, bash script or from an interactive shell.
+
+import argparse
+import sys
+
+import pystatsd
+
+parser = argparse.ArgumentParser(description="Send metric to a statsd server.")
+parser.add_argument('stat',
+                    help='The stat to update.',
+                    type=str)
+parser.add_argument('value',
+                    help='The value to send.',
+                    type=int)
+parser.add_argument('-v',
+                    dest='debug',
+                    action='store_true',
+                    help='Display debug output.',
+                    default=False)
+parser.add_argument('--host',
+                    dest='host',
+                    help='statsd host to receive stat (default: localhost)',
+                    type=str,
+                    default='localhost')
+parser.add_argument('--port',
+                    dest='port',
+                    help='statsd port to receive stat (default: 8125)',
+                    type=int,
+                    default=8125)
+parser.add_argument('--sample-rate',
+                    dest='sample_rate',
+                    help='The ratio (0-1) of events that are actually sent.',
+                    type=int,
+                    default=1)
+parser.add_argument('--timing',
+                    dest='timing',
+                    action='store_true',
+                    help='Send timing statistics rather than counters.',
+                    default=False)
+options = parser.parse_args(sys.argv[1:])
+
+
+if options.debug:
+    print "Sending %s with %d to %s:%s" % (options.stat, options.value,
+                                           options.host, options.port)
+
+client = pystatsd.Client(host=options.host, port=options.port)
+if options.timing:
+    client.timing(options.stat,
+                  options.value,
+                  options.sample_rate)
+else:
+    client.update_stats(options.stat,
+                        options.value,
+                        options.sample_rate)
