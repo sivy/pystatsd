@@ -61,12 +61,18 @@ class Client(object):
         """
         self.update_stats(stats, 1, sample_rate=sample_rate)
 
+    # alias
+    incr = increment
+
     def decrement(self, stats, sample_rate=1):
         """
         Decrements one or more stats counters
         >>> statsd_client.decrement('some.int')
         """
         self.update_stats(stats, -1, sample_rate=sample_rate)
+
+    # alias
+    decr = decrement
 
     def update_stats(self, stats, delta, sample_rate=1):
         """
@@ -98,3 +104,6 @@ class Client(object):
             [self.udp_sock.sendto("%s:%s" % (stat, value), self.addr) for stat, value in sampled_data.iteritems()]
         except:
             self.log.exception("unexpected error")
+
+    def __repr__(self):
+        return "<pystatsd.statsd.Client addr=%s prefix=%s>" % (self.addr, self.prefix)
