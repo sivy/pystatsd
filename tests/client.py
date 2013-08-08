@@ -72,7 +72,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
 
         self.client.update_stats(stats, 5)
 
-        for stat, value in data.iteritems():
+        for stat, value in data.items():
             stat_str = stat + value
             # thanks tos9 in #python for 'splaining the return_value bit.
             self.mock_socket.return_value.sendto.assert_call_any(

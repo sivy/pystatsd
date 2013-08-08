@@ -3,8 +3,6 @@
 Based on http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 """
 
-from __future__ import with_statement
-
 import atexit
 import os
 from signal import SIGTERM
@@ -27,7 +25,7 @@ class Daemon(object):
             if pid > 0:
                 # First parent; exit.
                 sys.exit(0)
-        except OSError, e:
+        except OSError as e:
             sys.stderr.write('Could not fork! %d (%s)\n' %
                              (e.errno, e.strerror))
             sys.exit(1)
@@ -35,7 +33,7 @@ class Daemon(object):
         # Disconnect from parent environment.
         os.chdir('/')
         os.setsid()
-        os.umask(0022)
+        os.umask(0o022)
 
         # Fork again.
         try:
@@ -43,7 +41,7 @@ class Daemon(object):
             if pid > 0:
                 # Second parent; exit.
                 sys.exit(0)
-        except OSError, e:
+        except OSError as e:
             sys.stderr.write('Could not fork (2nd)! %d (%s)\n' %
                              (e.errno, e.strerror))
             sys.exit(1)
@@ -98,13 +96,13 @@ class Daemon(object):
             while 1:
                 os.kill(pid, SIGTERM)
                 time.sleep(0.1)
-        except OSError, e:
+        except OSError as e:
             e = str(e)
             if e.find('No such process') > 0:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
                 else:
-                    print e
+                    print(e)
                     sys.exit(1)
 
     def restart(self, *args, **kw):
