@@ -130,9 +130,11 @@ class Server(object):
             if sample_rate == 0:
                 warn("Ignoring counter with sample rate of zero: <%s>" % (metric))
                 return
-
-        self.counters[key][0] += float(value or 1) * (1 / sample_rate)
-        self.counters[key][1] = ts
+        try:
+            self.counters[key][0] += float(value or 1) * (1 / sample_rate)
+            self.counters[key][1] = ts
+        except:
+            pass
 
     def on_timer(self):
         """Executes flush(). Ignores any errors to make sure one exception
