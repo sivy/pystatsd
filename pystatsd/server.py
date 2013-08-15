@@ -7,6 +7,7 @@ import logging
 import gmetric
 from subprocess import call
 from warnings import warn
+from collections import defaultdict
 # from xdrlib import Packer, Unpacker
 
 log = logging.getLogger(__name__)
@@ -78,7 +79,7 @@ class Server(object):
         self.debug = debug
         self.expire = expire
 
-        self.counters = {}
+        self.counters = defaultdict(lambda: [0, int(time.time())])
         self.timers = {}
         self.gauges = {}
         self.flusher = 0
@@ -129,11 +130,11 @@ class Server(object):
             if sample_rate == 0:
                 warn("Ignoring counter with sample rate of zero: <%s>" % (metric))
                 return
-
-        if key not in self.counters:
-            self.counters[key] = [ 0, ts ]
-        self.counters[key][0] += float(value or 1) * (1 / sample_rate)
-        self.counters[key][1] = ts
+        try:
+            self.counters[key][0] += float(value or 1) * (1 / sample_rate)
+            self.counters[key][1] = ts
+        except:
+            pass
 
     def on_timer(self):
         """Executes flush(). Ignores any errors to make sure one exception
