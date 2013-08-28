@@ -368,6 +368,9 @@ def run_server():
     parser.add_argument('--expire', dest='expire', help='time-to-live for old stats (in secs)', type=int, default=0)
     options = parser.parse_args(sys.argv[1:])
 
+    log_level = logging.DEBUG if options.debug else logging.INFO
+    logging.basicConfig(level=log_level,format='%(asctime)s [%(levelname)s] %(message)s')
+
     daemon = ServerDaemon(options.pidfile)
     if options.daemonize:
         daemon.start(options)
