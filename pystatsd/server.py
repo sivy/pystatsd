@@ -286,6 +286,7 @@ class Server(object):
 
     def _set_timer(self):
         self._timer = threading.Timer(self.flush_interval / 1000, self.on_timer)
+        self._timer.daemon = True
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
@@ -303,7 +304,11 @@ class Server(object):
         self._set_timer()
         while 1:
             data, addr = self._sock.recvfrom(self.buf)
-            self.process(data)
+            try:
+                self.process(data)
+            except Exception as error:
+                log.error("Bad data from %s: %s",addr,error) 
+
 
     def stop(self):
         self._timer.cancel()
