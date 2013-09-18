@@ -8,6 +8,7 @@ import socket
 import random
 import time
 
+
 # Sends statistics to the stats daemon over UDP
 class Client(object):
 
@@ -22,6 +23,7 @@ class Client(object):
         """
         self.host = host
         self.port = int(port)
+        self.addr = (socket.gethostbyname(self.host), self.port)
         self.prefix = prefix
         self.log = logging.getLogger("pystatsd.client")
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,13 +37,20 @@ class Client(object):
         """
         self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
 
-
     def timing(self, stat, time, sample_rate=1):
         """
         Log timing information for a single stat
         >>> statsd_client.timing('some.time',500)
         """
         stats = {stat: "%f|ms" % time}
+        self.send(stats, sample_rate)
+
+    def gauge(self, stat, value, sample_rate=1):
+        """
+        Log gauge information for a single stat
+        >>> statsd_client.gauge('some.gauge',42)
+        """
+        stats = {stat: "%f|g" % value}
         self.send(stats, sample_rate)
 
     def increment(self, stats, sample_rate=1):
@@ -52,12 +61,18 @@ class Client(object):
         """
         self.update_stats(stats, 1, sample_rate=sample_rate)
 
+    # alias
+    incr = increment
+
     def decrement(self, stats, sample_rate=1):
         """
         Decrements one or more stats counters
         >>> statsd_client.decrement('some.int')
         """
         self.update_stats(stats, -1, sample_rate=sample_rate)
+
+    # alias
+    decr = decrement
 
     def update_stats(self, stats, delta, sample_rate=1):
         """
@@ -74,7 +89,6 @@ class Client(object):
         """
         Squirt the metrics over UDP
         """
-        addr = (self.host, self.port)
 
         if self.prefix:
             data = dict((".".join((self.prefix, stat)), value) for stat, value in data.iteritems())
@@ -84,9 +98,12 @@ class Client(object):
                 return
             sampled_data = dict((stat, "%s|@%s" % (value, sample_rate)) for stat, value in data.iteritems())
         else:
-            sampled_data=data
+            sampled_data = data
 
         try:
-            [self.udp_sock.sendto("%s:%s" % (stat, value), addr) for stat, value in sampled_data.iteritems()]
+            [self.udp_sock.sendto("%s:%s" % (stat, value), self.addr) for stat, value in sampled_data.iteritems()]
         except:
             self.log.exception("unexpected error")
+
+    def __repr__(self):
+        return "<pystatsd.statsd.Client addr=%s prefix=%s>" % (self.addr, self.prefix)

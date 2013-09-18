@@ -3,6 +3,8 @@
 Based on http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 """
 
+from __future__ import with_statement
+
 import atexit
 import os
 from signal import SIGTERM
@@ -33,7 +35,7 @@ class Daemon(object):
         # Disconnect from parent environment.
         os.chdir('/')
         os.setsid()
-        os.umask(0)
+        os.umask(0022)
 
         # Fork again.
         try:
