@@ -1,6 +1,6 @@
 # pystatsd upstart script
 # 2011 - rob@atlanticdynamic.com
-# copy this to /etc/init/pystatsd.conf 
+# copy this to /etc/init/pystatsd.conf
 #
 
 description "start and stop the py-statsd server"
