@@ -286,6 +286,7 @@ class Server(object):
 
     def _set_timer(self):
         self._timer = threading.Timer(self.flush_interval / 1000, self.on_timer)
+        self._timer.daemon = True
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
@@ -303,7 +304,11 @@ class Server(object):
         self._set_timer()
         while 1:
             data, addr = self._sock.recvfrom(self.buf)
-            self.process(data)
+            try:
+                self.process(data)
+            except Exception, error:
+                log.error("Bad data from %s: %s",addr,error) 
+
 
     def stop(self):
         self._timer.cancel()
@@ -362,6 +367,9 @@ def run_server():
     parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
     parser.add_argument('--expire', dest='expire', help='time-to-live for old stats (in secs)', type=int, default=0)
     options = parser.parse_args(sys.argv[1:])
+
+    log_level = logging.DEBUG if options.debug else logging.INFO
+    logging.basicConfig(level=log_level,format='%(asctime)s [%(levelname)s] %(message)s')
 
     daemon = ServerDaemon(options.pidfile)
     if options.daemonize:
