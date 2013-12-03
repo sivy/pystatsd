@@ -200,7 +200,6 @@ class Server(object):
             elif self.transport == 'ganglia-gmetric':
                 self.send_to_ganglia_using_gmetric(k,v, "_gauges", "gauge")
 
-            del(self.gauges[k])
             stats += 1
 
         for k, (v, t) in self.timers.items():
