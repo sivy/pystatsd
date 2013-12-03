@@ -3,10 +3,12 @@ python:
   - "2.5"
   - "2.6"
   - "2.7"
+  - "3.3"
 
 # command to install dependencies
 install:
   - "pip install -r requirements.txt --use-mirrors"
   - "python setup.py -q install"
+
 # command to run tests
 script: nosetests tests
