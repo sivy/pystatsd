@@ -1,11 +1,11 @@
-import unittest2
+import unittest
 import mock
 
 # from pystatsd.statsd import Client
 from pystatsd.server import Server
 
 
-class ServerBasicsTestCase(unittest2.TestCase):
+class ServerBasicsTestCase(unittest.TestCase):
     """
     Tests the basic operations of the client
     """
@@ -19,4 +19,7 @@ class ServerBasicsTestCase(unittest2.TestCase):
     def test_server_create(self):
         server = Server()
 
-        self.assertIsNotNone(server)
+        if getattr(self, "assertIsNotNone", False):
+            self.assertIsNotNone(server)
+        else:
+            assert server is not None

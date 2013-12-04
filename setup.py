@@ -14,9 +14,7 @@ setup(
     url='https://github.com/sivy/py-statsd',
     license = "BSD",
     packages=['pystatsd'],
-    install_requires=['argparse >= 1.2'],
     long_description=read('README.md'),
-    requires=['argparse'],
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],

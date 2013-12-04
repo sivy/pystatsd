@@ -81,7 +81,7 @@ class Gmetric:
     def send(self, NAME, VAL, TYPE='', UNITS='', SLOPE='both',
              TMAX=60, DMAX=0, GROUP="", SPOOF=""):
         if SLOPE not in slope_str2int:
-            raise ValueError("Slope must be one of: " + str(self.slope.keys()))
+            raise ValueError("Slope must be one of: " + str(list(self.slope.keys())))
         if TYPE not in self.type:
             raise ValueError("Type must be one of: " + str(self.type))
         if len(NAME) == 0:
@@ -90,8 +90,8 @@ class Gmetric:
         ( meta_msg, data_msg )  = gmetric_write(NAME, VAL, TYPE, UNITS, SLOPE, TMAX, DMAX, GROUP, SPOOF)
         # print msg
 
-        self.socket.sendto(meta_msg, self.hostport)
-        self.socket.sendto(data_msg, self.hostport)
+        self.socket.sendto(bytes(bytearray(meta_msg, "utf-8")), self.hostport)
+        self.socket.sendto(bytes(bytearray(data_msg, "utf-8")), self.hostport)
 
 def gmetric_write(NAME, VAL, TYPE, UNITS, SLOPE, TMAX, DMAX, GROUP, SPOOF):
     """

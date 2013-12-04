@@ -4,7 +4,7 @@ import threading
 import time
 import types
 import logging
-import gmetric
+from . import gmetric
 from subprocess import call
 from warnings import warn
 # from xdrlib import Packer, Unpacker
@@ -16,7 +16,7 @@ try:
 except ImportError:
     setproctitle = None
 
-from daemon import Daemon
+from .daemon import Daemon
 
 
 __all__ = ['Server']
@@ -141,7 +141,7 @@ class Server(object):
         """
         try:
             self.flush()
-        except Exception, e:
+        except Exception as e:
             log.exception('Error while flushing: %s', e)
         self._set_timer()
 
@@ -157,14 +157,14 @@ class Server(object):
         for k, (v, t) in self.counters.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
-                    print "Expiring counter %s (age: %s)" % (k, ts -t)
+                    print("Expiring counter %s (age: %s)" % (k, ts -t))
                 del(self.counters[k])
                 continue
             v = float(v)
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
 
             if self.debug:
-                print "Sending %s => count=%s" % (k, v)
+                print("Sending %s => count=%s" % (k, v))
 
             if self.transport == 'graphite':
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
@@ -183,13 +183,13 @@ class Server(object):
         for k, (v, t) in self.gauges.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
-                    print "Expiring gauge %s (age: %s)" % (k, ts - t)
+                    print("Expiring gauge %s (age: %s)" % (k, ts - t))
                 del(self.gauges[k])
                 continue
             v = float(v)
 
             if self.debug:
-                print "Sending %s => value=%s" % (k, v)
+                print("Sending %s => value=%s" % (k, v))
 
             if self.transport == 'graphite':
                 # note: counters and gauges implicitly end up in the same namespace
@@ -205,7 +205,7 @@ class Server(object):
         for k, (v, t) in self.timers.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
-                    print "Expiring timer %s (age: %s)" % (k, ts - t)
+                    print("Expiring timer %s (age: %s)" % (k, ts - t))
                 del(self.timers[k])
                 continue
             if len(v) > 0:
@@ -227,8 +227,8 @@ class Server(object):
                 del(self.timers[k])
 
                 if self.debug:
-                    print "Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
-                        % (k, min, mean, max, self.pct_threshold, max_threshold, count)
+                    print("Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
+                        % (k, min, mean, max, self.pct_threshold, max_threshold, count))
 
                 if self.transport == 'graphite':
 
@@ -272,16 +272,16 @@ class Server(object):
             graphite = socket.socket()
             try:
                 graphite.connect((self.graphite_host, self.graphite_port))
-                graphite.sendall(stat_string)
+                graphite.sendall(bytes(bytearray(stat_string, "utf-8")))
                 graphite.close()
-            except socket.error, e:
+            except socket.error as e:
                 log.error("Error communicating with Graphite: %s" % e)
                 if self.debug:
-                    print "Error communicating with Graphite: %s" % e
+                    print("Error communicating with Graphite: %s" % e)
 
         if self.debug:
-            print "\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" \
-                % (stats)
+            print("\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" \
+                % (stats))
 
     def _set_timer(self):
         self._timer = threading.Timer(self.flush_interval / 1000, self.on_timer)
@@ -289,7 +289,7 @@ class Server(object):
         self._timer.start()
 
     def serve(self, hostname='', port=8125):
-        assert type(port) is types.IntType, 'port is not an integer: %s' % (port)
+        assert type(port) is int, 'port is not an integer: %s' % (port)
         addr = (hostname, port)
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.bind(addr)
@@ -305,7 +305,7 @@ class Server(object):
             data, addr = self._sock.recvfrom(self.buf)
             try:
                 self.process(data)
-            except Exception, error:
+            except Exception as error:
                 log.error("Bad data from %s: %s",addr,error) 
 
 
