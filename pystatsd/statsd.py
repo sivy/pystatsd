@@ -97,12 +97,13 @@ class Client(object):
         if sample_rate < 1:
             if random.random() > sample_rate:
                 return
-            sampled_data = dict((stat, "%s|@%s" % (value, sample_rate)) for stat, value in data.items())
+            sampled_data = dict((stat, "%s|@%s" % (value, sample_rate))
+                                for stat, value in data.items())
         else:
             sampled_data = data
 
         try:
-            [self.udp_sock.sendto(bytes(bytearray("%s:%s" % (stat, value), "utf-8")), self.addr) for stat, value in sampled_data.items()]
+            [self.udp_sock.sendto(bytes("%s:%s" % (stat, value), "utf-8"), self.addr) for stat, value in sampled_data.items()]
         except:
             self.log.exception("unexpected error")
 

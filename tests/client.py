@@ -1,12 +1,12 @@
 import time
-import unittest2
+import unittest
 import mock
 import socket
 
 from pystatsd.statsd import Client
 
 
-class ClientBasicsTestCase(unittest2.TestCase):
+class ClientBasicsTestCase(unittest.TestCase):
     """
     Tests the basic operations of the client
     """
@@ -40,7 +40,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
 
         # thanks tos9 in #python for 'splaining the return_value bit.
         self.mock_socket.return_value.sendto.assert_called_with(
-            stat_str, self.addr)
+            bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_decr(self):
         stat = 'pystatsd.unittests.test_basic_client_decr'
@@ -50,7 +50,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
 
         # thanks tos9 in #python for 'splaining the return_value bit.
         self.mock_socket.return_value.sendto.assert_called_with(
-            stat_str, self.addr)
+            bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_update_stats(self):
         stat = 'pystatsd.unittests.test_basic_client_update_stats'
@@ -60,7 +60,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
 
         # thanks tos9 in #python for 'splaining the return_value bit.
         self.mock_socket.return_value.sendto.assert_called_with(
-            stat_str, self.addr)
+            bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_update_stats_multi(self):
         stats = [
@@ -76,7 +76,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
             stat_str = stat + value
             # thanks tos9 in #python for 'splaining the return_value bit.
             self.mock_socket.return_value.sendto.assert_call_any(
-                stat_str, self.addr)
+                bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_timing(self):
         stat = 'pystatsd.unittests.test_basic_client_timing.time'
@@ -86,7 +86,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
 
         # thanks tos9 in #python for 'splaining the return_value bit.
         self.mock_socket.return_value.sendto.assert_called_with(
-            stat_str, self.addr)
+            bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_timing_since(self):
         ts = (1971, 6, 29, 4, 13, 0, 0, 0, -1)
@@ -104,7 +104,7 @@ class ClientBasicsTestCase(unittest2.TestCase):
 
         # thanks tos9 in #python for 'splaining the return_value bit.
         self.mock_socket.return_value.sendto.assert_called_with(
-            stat_str, self.addr)
+            bytes(stat_str, 'utf-8'), self.addr)
 
         mock_time_patcher.stop()
 

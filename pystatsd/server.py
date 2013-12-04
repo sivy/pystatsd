@@ -305,7 +305,7 @@ class Server(object):
             data, addr = self._sock.recvfrom(self.buf)
             try:
                 self.process(data)
-            except Exception, error:
+            except Exception as error:
                 log.error("Bad data from %s: %s",addr,error) 
 
 
