@@ -2,8 +2,14 @@ import time
 import unittest
 import mock
 import socket
+import sys
 
 from pystatsd.statsd import Client
+
+
+if sys.version_info[0] < 3:
+    def bytes(s, encode):
+        return s
 
 
 class ClientBasicsTestCase(unittest.TestCase):
