@@ -112,10 +112,9 @@ class Server(object):
 
     def __record_timer(self, key, value, rest):
         ts = int(time.time())
-        if key not in self.timers:
-            self.timers[key] = [ [], ts ]
-        self.timers[key][0].append(float(value or 0))
-        self.timers[key][1] = ts
+        timer = self.timers.setdefault(key, [ [], ts ])
+        timer[0].append(float(value or 0))
+        timer[1] = ts
 
     def __record_gauge(self, key, value, rest):
         ts = int(time.time())
@@ -130,10 +129,9 @@ class Server(object):
                 warn("Ignoring counter with sample rate of zero: <%s>" % (metric))
                 return
 
-        if key not in self.counters:
-            self.counters[key] = [ 0, ts ]
-        self.counters[key][0] += float(value or 1) * (1 / sample_rate)
-        self.counters[key][1] = ts
+        counter = self.counters.setdefault(key, [ 0, ts ])
+        counter[0] += float(value or 1) * (1 / sample_rate)
+        counter[1] = ts
 
     def on_timer(self):
         """Executes flush(). Ignores any errors to make sure one exception
