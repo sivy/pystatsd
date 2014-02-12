@@ -371,7 +371,6 @@ def run_server():
         options.pct = int(stats_conf['general']['pct_threshold'])
         options.transport = stats_conf['general']['transport']
         options.no_aggregate_counters = stats_conf['general']['no_aggregate_counters']
-        options.debug = True if stats_conf['general']['debug'] == 'True' else False
         options.log_file = stats_conf['general']['log_file']
         options.expire = int(stats_conf['general']['expire'])
         options.name = stats_conf['general']['hostname']
@@ -387,24 +386,24 @@ def run_server():
         options.timers_prefix = stats_conf['graphite']['timers_prefix']
         options.flush_interval = int(stats_conf['graphite']['flush_interval'])
 
-    log_level = logging.DEBUG if options.debug else logging.INFO
-    logging.basicConfig(level=log_level,format='%(asctime)s [%(levelname)s] %(message)s')
+    if options.debug or stats_conf['general']['debug'] == 'True':
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
     formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-
+    try:
+        fh = logging.handlers.RotatingFileHandler(options.log_file, maxBytes=20000000, backupCount=5)
+        fh.setLevel(log_level)
+        fh.setFormatter(formatter)
+        log.addHandler(fh)
+    except:
+        log.warning("Couldn't open %s for logging. Running without log file!" % options.log_file)
+        pass
     if options.debug:
         ch = logging.StreamHandler()
         ch.setLevel(log_level)
         ch.setFormatter(formatter)
         log.addHandler(ch)
-    else:
-        try:
-            fh = logging.handlers.RotatingFileHandler(options.log_file, maxBytes=20000000, backupCount=5)
-            fh.setLevel(log_level)
-            fh.setFormatter(formatter)
-            log.addHandler(fh)
-        except:
-            log.warning("Couldn't open %s for logging. Running without log file!" % options.log_file)
-            pass
 
     daemon = ServerDaemon(options.pidfile)
     if options.daemonize:
