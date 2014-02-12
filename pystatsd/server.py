@@ -399,7 +399,7 @@ def run_server():
     except:
         log.warning("Couldn't open %s for logging. Running without log file!" % options.log_file)
         pass
-    if options.debug:
+    if options.debug or not options.daemonize:
         ch = logging.StreamHandler()
         ch.setLevel(log_level)
         ch.setFormatter(formatter)
