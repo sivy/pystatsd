@@ -49,7 +49,8 @@ class Server(object):
                  ganglia_host='localhost', ganglia_port=8649,
                  ganglia_spoof_host='statsd:statsd',
                  gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
-                 graphite_host='localhost', graphite_port=2003, flush_interval=10000,
+                 graphite_host='localhost', graphite_port=2003, hosted_graphite_apikey=None, 
+                 flush_interval=10000,
                  no_aggregate_counters=False, counters_prefix='stats',
                  timers_prefix='stats.timers', expire=0):
         self.buf = 8192
@@ -77,6 +78,9 @@ class Server(object):
         self.timers_prefix = timers_prefix
         self.debug = debug
         self.expire = expire
+
+        # Hosted Graphite
+        self.hosted_graphite_apikey = hosted_graphite_apikey
 
         self.counters = {}
         self.timers = {}
@@ -269,6 +273,13 @@ class Server(object):
         if self.transport == 'graphite':
 
             stat_string += "statsd.numStats %s %d\n" % (stats, ts)
+
+            # Prepend stats with Hosted Graphite API key if necessary
+            if self.hosted_graphite_apikey:
+                stat_string = '\n'.join([
+                    '%s.%s' % (self.hosted_graphite_apikey, s) for s in stat_string.split('\n')[:-1]
+                ])
+
             graphite = socket.socket()
             try:
                 graphite.connect((self.graphite_host, self.graphite_port))
@@ -323,6 +334,7 @@ class ServerDaemon(Daemon):
                         transport=options.transport,
                         graphite_host=options.graphite_host,
                         graphite_port=options.graphite_port,
+                        hosted_graphite_apikey=options.hosted_graphite_apikey,
                         ganglia_host=options.ganglia_host,
                         ganglia_spoof_host=options.ganglia_spoof_host,
                         ganglia_port=options.ganglia_port,
@@ -347,6 +359,7 @@ def run_server():
     parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite, ganglia (uses embedded library) or ganglia-gmetric (uses gmetric)', type=str, default="graphite")
     parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type=int, default=2003)
     parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
+    parser.add_argument('--hosted-graphite-apikey', dest='hosted_graphite_apikey', help='API key to http://hostedgraphite.com', type=str, default=None)
     # Uses embedded Ganglia Library
     parser.add_argument('--ganglia-port', dest='ganglia_port', help='Unicast port to connect to ganglia on', type=int, default=8649)
     parser.add_argument('--ganglia-host', dest='ganglia_host', help='Unicast host to connect to ganglia on', type=str, default='localhost')
