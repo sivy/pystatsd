@@ -26,6 +26,9 @@ script
   exec su -s /bin/sh -c "/usr/bin/pystatsd-server \
 --port $LOCAL_PYSTATD_PORT \
 --pct $PCT \
+--flush-interval $FLUSH_INTERVAL \
+--counters-prefix $COUNTERS_PREFIX \
+--timers-prefix $TIMERS_PREFIX \
 --graphite-host $GRAPHITE_HOST \
 --graphite-port $GRAPHITE_PORT" $USER
 end script
