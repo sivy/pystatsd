@@ -49,7 +49,8 @@ class Server(object):
                  ganglia_host='localhost', ganglia_port=8649,
                  ganglia_spoof_host='statsd:statsd',
                  gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
-                 graphite_host='localhost', graphite_port=2003, flush_interval=10000,
+                 graphite_host='localhost', graphite_port=2003, global_prefix=None, 
+                 flush_interval=10000,
                  no_aggregate_counters=False, counters_prefix='stats',
                  timers_prefix='stats.timers', expire=0):
         self.buf = 8192
@@ -77,6 +78,9 @@ class Server(object):
         self.timers_prefix = timers_prefix
         self.debug = debug
         self.expire = expire
+
+        # For services like Hosted Graphite, etc.
+        self.global_prefix = global_prefix
 
         self.counters = {}
         self.timers = {}
@@ -267,6 +271,13 @@ class Server(object):
         if self.transport == 'graphite':
 
             stat_string += "statsd.numStats %s %d\n" % (stats, ts)
+
+            # Prepend stats with Hosted Graphite API key if necessary
+            if self.global_prefix:
+                stat_string = '\n'.join([
+                    '%s.%s' % (self.global_prefix, s) for s in stat_string.split('\n')[:-1]
+                ])
+
             graphite = socket.socket()
             try:
                 graphite.connect((self.graphite_host, self.graphite_port))
@@ -321,6 +332,7 @@ class ServerDaemon(Daemon):
                         transport=options.transport,
                         graphite_host=options.graphite_host,
                         graphite_port=options.graphite_port,
+                        global_prefix=options.global_prefix,
                         ganglia_host=options.ganglia_host,
                         ganglia_spoof_host=options.ganglia_spoof_host,
                         ganglia_port=options.ganglia_port,
@@ -355,6 +367,7 @@ def run_server():
     # 
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
+    parser.add_argument('--global-prefix', dest='global_prefix', help='prefix to append to all stats sent to graphite. Useful for hosted services (ex: Hosted Graphite) or stats namespacing (default: None)', type=str, default=None)
     parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: stats)', type=str, default='stats')
     parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: stats.timers)', type=str, default='stats.timers')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
