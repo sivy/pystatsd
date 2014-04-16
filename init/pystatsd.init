@@ -22,6 +22,21 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
+# Default settings
+LOCAL_PYSTATD_PORT=8125
+PCT=90
+FLUSH_INTERVAL=10000
+COUNTERS_PREFIX=stats
+TIMERS_PREFIX=stats.timers
+GRAPHITE_HOST=localhost
+GRAPHITE_PORT=2003
+USER=nobody
+
+# Load settings file if it exists
+if [ -e /etc/default/pystatsd ]; then
+    . /etc/default/pystatsd
+fi
+
 PIDFILE=/var/run/pystatsd.pid
 
 # Check that networking is up.
@@ -35,7 +50,7 @@ start() {
     # Start daemons.
     ret=0
     echo -n $"Starting $prog: "
-    daemon /usr/bin/pystatsd-server --daemon --pidfile $PIDFILE
+    daemon /usr/bin/pystatsd-server --port $LOCAL_PYSTATD_PORT --pct $PCT --flush-interval $FLUSH_INTERVAL --counters-prefix $COUNTERS_PREFIX --timers-prefix $TIMERS_PREFIX --graphite-host $GRAPHITE_HOST --graphite-port $GRAPHITE_PORT --daemon --pidfile $PIDFILE
     RETVAL=$?
     echo
     [ $RETVAL -eq 0 ] && touch /var/lock/subsys/pystatsd

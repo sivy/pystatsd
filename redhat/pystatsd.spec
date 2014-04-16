@@ -8,7 +8,7 @@
 
 Name:           pystatsd
 Version:        0.1.7
-Release:        2%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation of the Statsd client/server
 Group:          Applications/Internet
 License:        Unknown
@@ -51,19 +51,25 @@ server, a front end/proxy for the Graphite stats collection and graphing server.
 rm -rf %{buildroot}
 %{__python} setup.py install --skip-build --root %{buildroot}
 mkdir -p %{buildroot}/etc/init.d
-install -m0755 redhat/pystatsd.init  %{buildroot}/etc/init.d/pystatsd
+install -m0755 init/pystatsd.init  %{buildroot}/etc/init.d/pystatsd
+mkdir -p %{buildroot}/etc/default
+install -m0644 init/pystatsd.default  %{buildroot}%{_sysconfdir}/default/pystatsd
+
 %clean
 rm -rf %{buildroot}
-
 
 %files
 %defattr(-,root,root,-)
 %doc README.md
+%config %{_sysconfdir}/default/pystatsd
 %{python_sitelib}/*
 /usr/bin/pystatsd-server
 /etc/init.d/pystatsd
 
 %changelog
+* Mon Apr 07 2014 Stefan Richter <stefan@02strich.de> - 0.1.7-4
+- update to 4a60cbb2d8152925fa0d18b1666be3bad2e2884b
+- also use/install /etc/default/pystatsd
 * Wed Aug 15 2012 Bruno Clermont <bruno.clermont@gmail.com> - 0.1.7-3
 - update to 36a59d3b126ded4658aff25bce94e844a1c6413e
 - Fix path to README file
