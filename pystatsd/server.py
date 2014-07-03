@@ -4,9 +4,11 @@ import threading
 import time
 import types
 import logging
+import logging.handlers
 from . import gmetric
 from subprocess import call
 from warnings import warn
+from configobj import ConfigObj
 # from xdrlib import Packer, Unpacker
 
 log = logging.getLogger(__name__)
@@ -45,7 +47,7 @@ TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 
 class Server(object):
 
-    def __init__(self, pct_threshold=90, debug=False, transport='graphite',
+    def __init__(self, pct_threshold=90, transport='graphite',
                  ganglia_host='localhost', ganglia_port=8649,
                  ganglia_spoof_host='statsd:statsd',
                  gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
@@ -76,7 +78,6 @@ class Server(object):
         self.no_aggregate_counters = no_aggregate_counters
         self.counters_prefix = counters_prefix
         self.timers_prefix = timers_prefix
-        self.debug = debug
         self.expire = expire
 
         # For services like Hosted Graphite, etc.
@@ -144,7 +145,7 @@ class Server(object):
         try:
             self.flush()
         except Exception as e:
-            log.exception('Error while flushing: %s', e)
+            log.error('Error while flushing: %s', e)
         self._set_timer()
 
     def flush(self):
@@ -165,8 +166,7 @@ class Server(object):
             v = float(v)
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
 
-            if self.debug:
-                print("Sending %s => count=%s" % (k, v))
+            log.debug("Sending %s => count=%s" % (k, v))
 
             if self.transport == 'graphite':
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
@@ -190,8 +190,7 @@ class Server(object):
                 continue
             v = float(v)
 
-            if self.debug:
-                print("Sending %s => value=%s" % (k, v))
+            log.debug("Sending %s => value=%s" % (k, v))
 
             if self.transport == 'graphite':
                 # note: counters and gauges implicitly end up in the same namespace
@@ -228,8 +227,7 @@ class Server(object):
 
                 del(self.timers[k])
 
-                if self.debug:
-                    print("Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
+                log.debug("Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
                         % (k, min, mean, max, self.pct_threshold, max_threshold, count))
 
                 if self.transport == 'graphite':
@@ -285,11 +283,8 @@ class Server(object):
                 graphite.close()
             except socket.error as e:
                 log.error("Error communicating with Graphite: %s" % e)
-                if self.debug:
-                    print("Error communicating with Graphite: %s" % e)
 
-        if self.debug:
-            print("\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" \
+        log.debug("\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" \
                 % (stats))
 
     def _set_timer(self):
@@ -328,7 +323,6 @@ class ServerDaemon(Daemon):
         if setproctitle:
             setproctitle('pystatsd')
         server = Server(pct_threshold=options.pct,
-                        debug=options.debug,
                         transport=options.transport,
                         graphite_host=options.graphite_host,
                         graphite_port=options.graphite_port,
@@ -376,10 +370,51 @@ def run_server():
     parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
     parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
     parser.add_argument('--expire', dest='expire', help='time-to-live for old stats (in secs)', type=int, default=0)
+    parser.add_argument('-c', '--config', dest='config', help='config file with settings', type=str)
+    parser.add_argument('-l', '--log-file', dest='log_file', help='log file to store output', type=str, default='/var/log/pystatsd.log')
     options = parser.parse_args(sys.argv[1:])
 
-    log_level = logging.DEBUG if options.debug else logging.INFO
-    logging.basicConfig(level=log_level,format='%(asctime)s [%(levelname)s] %(message)s')
+    try:
+        stats_conf = ConfigObj(options.config)
+    except:
+        print('Config file %s does not exist! Running with CLI options!' % options.config)
+    else:
+        options.pct = int(stats_conf['general']['pct_threshold'])
+        options.transport = stats_conf['general']['transport']
+        options.no_aggregate_counters = stats_conf['general']['no_aggregate_counters']
+        options.log_file = stats_conf['general']['log_file']
+        options.expire = int(stats_conf['general']['expire'])
+        options.name = stats_conf['general']['hostname']
+        options.port = int(stats_conf['general']['port'])
+        options.ganglia_host = stats_conf['ganglia']['host']
+        options.ganglia_spoof_host = stats_conf['ganglia']['spoof_host']
+        options.ganglia_port = int(stats_conf['ganglia']['port'])
+        options.gmetric_exec = stats_conf['ganglia']['gmetric_exec']
+        options.gmetric_options = stats_conf['ganglia']['gmetric_options']
+        options.graphite_host = stats_conf['graphite']['host']
+        options.graphite_port = int(stats_conf['graphite']['port'])
+        options.counters_prefix = stats_conf['graphite']['counters_prefix']
+        options.timers_prefix = stats_conf['graphite']['timers_prefix']
+        options.flush_interval = int(stats_conf['graphite']['flush_interval'])
+
+    if options.debug or stats_conf['general']['debug'] == 'True':
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+    try:
+        fh = logging.handlers.RotatingFileHandler(options.log_file, maxBytes=20000000, backupCount=5)
+        fh.setLevel(log_level)
+        fh.setFormatter(formatter)
+        log.addHandler(fh)
+    except:
+        log.warning("Couldn't open %s for logging. Running without log file!" % options.log_file)
+        pass
+    if options.debug or not options.daemonize:
+        ch = logging.StreamHandler()
+        ch.setLevel(log_level)
+        ch.setFormatter(formatter)
+        log.addHandler(ch)
 
     daemon = ServerDaemon(options.pidfile)
     if options.daemonize:
