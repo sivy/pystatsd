@@ -3,6 +3,7 @@
 # Steve Ivy <steveivy@gmail.com>
 # http://monkinetic.com
 
+import contextlib
 import logging
 import socket
 import random
@@ -29,30 +30,42 @@ class Client(object):
         self.log.addHandler(logging.StreamHandler())
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def timing_since(self, stat, start, sample_rate=1):
+    @contextlib.contextmanager
+    def timer(self, stats, sample_rate=1):
+        start = time.time()
+        yield
+        self.timing_since(stats, start, sample_rate)
+
+    def timing_since(self, stats, start, sample_rate=1):
         """
-        Log timing information as the number of microseconds since the provided time float
+        Log timing information as the number of milliseconds since the provided time float
         >>> start = time.time()
         >>> # do stuff
         >>> statsd_client.timing_since('some.time', start)
         """
-        self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
+        self.timing(stats, (time.time() - start) * 1000, sample_rate)
 
-    def timing(self, stat, time, sample_rate=1):
+    def timing(self, stats, time, sample_rate=1):
         """
-        Log timing information for a single stat
-        >>> statsd_client.timing('some.time',500)
+        Log timing information for one or more stats, in milliseconds
+        >>> statsd_client.timing('some.time', 500)
         """
-        stats = {stat: "%f|ms" % time}
-        self.send(stats, sample_rate)
+        if not isinstance(stats, list):
+            stats = [stats]
 
-    def gauge(self, stat, value, sample_rate=1):
+        data = dict((stat, "%f|ms" % time) for stat in stats)
+        self.send(data, sample_rate)
+
+    def gauge(self, stats, value, sample_rate=1):
         """
         Log gauge information for a single stat
         >>> statsd_client.gauge('some.gauge',42)
         """
-        stats = {stat: "%f|g" % value}
-        self.send(stats, sample_rate)
+        if not isinstance(stats, list):
+            stats = [stats]
+
+        data = dict((stat, "%f|g" % value) for stat in stats)
+        self.send(data, sample_rate)
 
     def increment(self, stats, sample_rate=1):
         """
