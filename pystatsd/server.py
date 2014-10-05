@@ -35,11 +35,11 @@ def _clean_key(k):
 
 
 
-TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
-%(prefix)s.%(key)s.count %(count)s %(ts)s
-%(prefix)s.%(key)s.mean %(mean)s %(ts)s
-%(prefix)s.%(key)s.upper %(max)s %(ts)s
-%(prefix)s.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
+TIMER_MSG = '''%(prefix)s%(key)s.lower %(min)s %(ts)s
+%(prefix)s%(key)s.count %(count)s %(ts)s
+%(prefix)s%(key)s.mean %(mean)s %(ts)s
+%(prefix)s%(key)s.upper %(max)s %(ts)s
+%(prefix)s%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
 '''
 
 
@@ -74,13 +74,13 @@ class Server(object):
         self.graphite_host = graphite_host
         self.graphite_port = graphite_port
         self.no_aggregate_counters = no_aggregate_counters
-        self.counters_prefix = counters_prefix
-        self.timers_prefix = timers_prefix
+        self.counters_prefix = counters_prefix + '.' if counters_prefix else ''
+        self.timers_prefix = timers_prefix + '.' if timers_prefix else ''
         self.debug = debug
         self.expire = expire
 
         # For services like Hosted Graphite, etc.
-        self.global_prefix = global_prefix
+        self.global_prefix = global_prefix + '.' if timers_prefix else ''
 
         self.counters = {}
         self.timers = {}
@@ -169,7 +169,7 @@ class Server(object):
                 print("Sending %s => count=%s" % (k, v))
 
             if self.transport == 'graphite':
-                msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
+                msg = '%s%s %s %s\n' % (self.counters_prefix, k, v, ts)
                 stat_string += msg
             elif self.transport == 'ganglia':
                 # We put counters in _counters group. Underscore is to make sure counters show up
@@ -195,7 +195,7 @@ class Server(object):
 
             if self.transport == 'graphite':
                 # note: counters and gauges implicitly end up in the same namespace
-                msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
+                msg = '%s%s %s %s\n' % (self.counters_prefix, k, v, ts)
                 stat_string += msg
             elif self.transport == 'ganglia':
                 g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
@@ -275,7 +275,7 @@ class Server(object):
             # Prepend stats with Hosted Graphite API key if necessary
             if self.global_prefix:
                 stat_string = '\n'.join([
-                    '%s.%s' % (self.global_prefix, s) for s in stat_string.split('\n')[:-1]
+                    '%s%s' % (self.global_prefix, s) for s in stat_string.split('\n')[:-1]
                 ])
 
             graphite = socket.socket()
