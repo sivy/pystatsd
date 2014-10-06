@@ -80,7 +80,7 @@ class Server(object):
         self.expire = expire
 
         # For services like Hosted Graphite, etc.
-        self.global_prefix = global_prefix + '.' if timers_prefix else ''
+        self.global_prefix = global_prefix + '.' if global_prefix else ''
 
         self.counters = {}
         self.timers = {}
