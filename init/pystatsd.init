@@ -50,7 +50,8 @@ start() {
     # Start daemons.
     ret=0
     echo -n $"Starting $prog: "
-    daemon /usr/bin/pystatsd-server --port $LOCAL_PYSTATD_PORT --pct $PCT --flush-interval $FLUSH_INTERVAL --counters-prefix $COUNTERS_PREFIX --timers-prefix $TIMERS_PREFIX --graphite-host $GRAPHITE_HOST --graphite-port $GRAPHITE_PORT --daemon --pidfile $PIDFILE
+    install -o $USER /dev/null $PIDFILE
+    daemon --user $USER /usr/bin/pystatsd-server --port $LOCAL_PYSTATD_PORT --pct $PCT --flush-interval $FLUSH_INTERVAL --counters-prefix $COUNTERS_PREFIX --timers-prefix $TIMERS_PREFIX --graphite-host $GRAPHITE_HOST --graphite-port $GRAPHITE_PORT --daemon --pidfile $PIDFILE
     RETVAL=$?
     echo
     [ $RETVAL -eq 0 ] && touch /var/lock/subsys/pystatsd
