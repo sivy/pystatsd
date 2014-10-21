@@ -2,7 +2,7 @@
 #
 # pystatsd      This shell script takes care of starting and stopping pystatsd.
 #
-# chkconfig: 2345 80 30
+# chkconfig: - 80 30
 # description: Pystatsd is a front end/proxy for the Graphite stats collection and graphing server.
 #              
 # processname: pystatsd
@@ -13,8 +13,6 @@
 # Provides: pystatsd
 # Required-Start: $local_fs $network
 # Required-Stop: $local_fs $network
-# Default-Start: 2 3 4 5
-# Default-Stop: 0 1 6
 # Short-Description: start and stop pystatsd
 # Description: Pystatsd is a front end/proxy for the Graphite stats collection and graphing server.
 ### END INIT INFO
