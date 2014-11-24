@@ -32,64 +32,33 @@ def _clean_key(k):
             k.replace('/', '-').replace(' ', '_')
         )
     )
-
-
-
-TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
-%(prefix)s.%(key)s.count %(count)s %(ts)s
-%(prefix)s.%(key)s.mean %(mean)s %(ts)s
-%(prefix)s.%(key)s.upper %(max)s %(ts)s
-%(prefix)s.%(key)s.upper_%(pct_threshold)s %(max_threshold)s %(ts)s
-'''
-
+    
 
 class Server(object):
 
     def __init__(self, pct_threshold=90, debug=False, transport='graphite',
-                 ganglia_host='localhost', ganglia_port=8649,
-                 ganglia_spoof_host='statsd:statsd',
-                 gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
-                 graphite_host='localhost', graphite_port=2003, global_prefix=None, 
-                 flush_interval=10000,
-                 no_aggregate_counters=False, counters_prefix='stats',
-                 timers_prefix='stats.timers', expire=0):
+                 flush_interval=10000, expire=0, no_aggregate_counters=False,
+                 deleteGauges=False, backends=[], options={}):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
         self.transport = transport
-        # Embedded Ganglia library options specific settings
-        self.ganglia_host = ganglia_host
-        self.ganglia_port = ganglia_port
-        self.ganglia_protocol = "udp"
-        # Use gmetric
-        self.gmetric_exec = gmetric_exec
-        self.gmetric_options = gmetric_options
-        # Set DMAX to flush interval plus 20%. That should avoid metrics to prematurely expire if there is
-        # some type of a delay when flushing
-        self.dmax = int(self.flush_interval * 1.2)
-        # What hostname should these metrics be attached to.
-        self.ganglia_spoof_host = ganglia_spoof_host
 
-        # Graphite specific settings
-        self.graphite_host = graphite_host
-        self.graphite_port = graphite_port
         self.no_aggregate_counters = no_aggregate_counters
-        self.counters_prefix = counters_prefix
-        self.timers_prefix = timers_prefix
         self.debug = debug
         self.expire = expire
 
-        # For services like Hosted Graphite, etc.
-        self.global_prefix = global_prefix
-
+        self.backends = backends
+        self.deleteGauges = deleteGauges
+        
+        options.update({'debug': debug, 'flush_interval': flush_interval})
+        for backend in backends:
+            backend.init(options)
+        
         self.counters = {}
         self.timers = {}
         self.gauges = {}
         self.flusher = 0
-
-    def send_to_ganglia_using_gmetric(self,k,v,group, units):
-        call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])
-
 
     def process(self, data):
         # the data is a sequence of newline-delimited metrics
@@ -144,18 +113,15 @@ class Server(object):
         try:
             self.flush()
         except Exception as e:
+            print e
             log.exception('Error while flushing: %s', e)
         self._set_timer()
 
     def flush(self):
         ts = int(time.time())
         stats = 0
-
-        if self.transport == 'graphite':
-            stat_string = ''
-        elif self.transport == 'ganglia':
-            g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
-
+        metrics = {'counters': {}, 'gauges': {}, 'timers': {}}
+        
         for k, (v, t) in self.counters.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
@@ -164,46 +130,23 @@ class Server(object):
                 continue
             v = float(v)
             v = v if self.no_aggregate_counters else v / (self.flush_interval / 1000)
-
-            if self.debug:
-                print("Sending %s => count=%s" % (k, v))
-
-            if self.transport == 'graphite':
-                msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
-                stat_string += msg
-            elif self.transport == 'ganglia':
-                # We put counters in _counters group. Underscore is to make sure counters show up
-                # first in the GUI. Change below if you disagree
-                g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
-            elif self.transport == 'ganglia-gmetric':
-                self.send_to_ganglia_using_gmetric(k,v, "_counters", "count")
+            metrics['counters'][k] = v
 
             # Clear the counter once the data is sent
             del(self.counters[k])
             stats += 1
-
+                
         for k, (v, t) in self.gauges.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring gauge %s (age: %s)" % (k, ts - t))
                 del(self.gauges[k])
                 continue
-            v = float(v)
-
-            if self.debug:
-                print("Sending %s => value=%s" % (k, v))
-
-            if self.transport == 'graphite':
-                # note: counters and gauges implicitly end up in the same namespace
-                msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
-                stat_string += msg
-            elif self.transport == 'ganglia':
-                g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
-            elif self.transport == 'ganglia-gmetric':
-                self.send_to_ganglia_using_gmetric(k,v, "_gauges", "gauge")
-
+            metrics['gauges'][k] = float(v)
+            if self.deleteGauges:
+                del(self.gauges[k])
             stats += 1
-
+            
         for k, (v, t) in self.timers.items():
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
@@ -226,68 +169,16 @@ class Server(object):
                     total = sum(v)
                     mean = total / count
 
+                metrics['timers'][k] = {
+                    'mean': mean, 'max': max, 'min': min, 'count': count,
+                    'max_threshold': max_threshold, 'pct_threshold': pct_threshold
+                }
                 del(self.timers[k])
-
-                if self.debug:
-                    print("Sending %s ====> lower=%s, mean=%s, upper=%s, %dpct=%s, count=%s" \
-                        % (k, min, mean, max, self.pct_threshold, max_threshold, count))
-
-                if self.transport == 'graphite':
-
-                    stat_string += TIMER_MSG % {
-                        'prefix': self.timers_prefix,
-                        'key': k,
-                        'mean': mean,
-                        'max': max,
-                        'min': min,
-                        'count': count,
-                        'max_threshold': max_threshold,
-                        'pct_threshold': self.pct_threshold,
-                        'ts': ts,
-                    }
-
-                elif self.transport == 'ganglia':
-                    # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
-                    # 3521 k ms which is 3.521 seconds
-                    # What group should these metrics be in. For the time being we'll set it to the name of the key
-                    group = k
-                    g.send(k + "_min", min / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_mean", mean / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_max", max / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                elif self.transport == 'ganglia-gmetric':
-                    # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
-                    # 3521 k ms which is 3.521 seconds
-                    group = k
-                    self.send_to_ganglia_using_gmetric(k + "_mean", mean / 1000, group, "seconds")
-                    self.send_to_ganglia_using_gmetric(k + "_min",  min / 1000 , group, "seconds")
-                    self.send_to_ganglia_using_gmetric(k + "_max",  max / 1000, group, "seconds")
-                    self.send_to_ganglia_using_gmetric(k + "_count", count , group, "count")
-                    self.send_to_ganglia_using_gmetric(k + "_" + str(self.pct_threshold) + "pct",  max_threshold / 1000, group, "seconds")
-
                 stats += 1
-
-        if self.transport == 'graphite':
-
-            stat_string += "statsd.numStats %s %d\n" % (stats, ts)
-
-            # Prepend stats with Hosted Graphite API key if necessary
-            if self.global_prefix:
-                stat_string = '\n'.join([
-                    '%s.%s' % (self.global_prefix, s) for s in stat_string.split('\n')[:-1]
-                ])
-
-            graphite = socket.socket()
-            try:
-                graphite.connect((self.graphite_host, self.graphite_port))
-                graphite.sendall(bytes(bytearray(stat_string, "utf-8")))
-                graphite.close()
-            except socket.error as e:
-                log.error("Error communicating with Graphite: %s" % e)
-                if self.debug:
-                    print("Error communicating with Graphite: %s" % e)
-
+                
+        for backend in self.backends:
+            backend.flush(ts, metrics)
+            
         if self.debug:
             print("\n================== Flush completed. Waiting until next flush. Sent out %d metrics =======" \
                 % (stats))
