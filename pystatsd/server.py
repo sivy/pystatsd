@@ -113,7 +113,6 @@ class Server(object):
         try:
             self.flush()
         except Exception as e:
-            print e
             log.exception('Error while flushing: %s', e)
         self._set_timer()
 
