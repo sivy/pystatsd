@@ -36,13 +36,12 @@ def _clean_key(k):
 
 class Server(object):
 
-    def __init__(self, pct_threshold=90, debug=False, transport='graphite',
-                 flush_interval=10000, expire=0, no_aggregate_counters=False,
-                 deleteGauges=False, backends=[], options={}):
+    def __init__(self, pct_threshold=90, debug=False, flush_interval=10000,
+                 expire=0, no_aggregate_counters=False, deleteGauges=False,
+                 backends=[], options={}):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
-        self.transport = transport
 
         self.no_aggregate_counters = no_aggregate_counters
         self.debug = debug
@@ -52,6 +51,8 @@ class Server(object):
         self.deleteGauges = deleteGauges
         
         options.update({'debug': debug, 'flush_interval': flush_interval})
+        
+        # initialize each backend
         for backend in backends:
             backend.init(options)
         
@@ -76,7 +77,7 @@ class Server(object):
             value = match.group(2)
             rest  = match.group(3).split('|')
             mtype = rest.pop(0)
-
+            
             if   (mtype == 'ms'): self.__record_timer(key, value, rest)
             elif (mtype == 'g' ): self.__record_gauge(key, value, rest)
             elif (mtype == 'c' ): self.__record_counter(key, value, rest)
@@ -170,7 +171,7 @@ class Server(object):
 
                 metrics['timers'][k] = {
                     'mean': mean, 'max': max, 'min': min, 'count': count,
-                    'max_threshold': max_threshold, 'pct_threshold': pct_threshold
+                    'max_threshold': max_threshold, 'pct_threshold': self.pct_threshold
                 }
                 del(self.timers[k])
                 stats += 1
