@@ -122,7 +122,9 @@ class Server(object):
         stats = 0
         metrics = {'counters': {}, 'gauges': {}, 'timers': {}}
         
-        for k, (v, t) in self.counters.items():
+        #for k, (v, t) in self.counters.items():
+        for k in list(self.counters.keys()):
+            v, t = self.counters[k]
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring counter %s (age: %s)" % (k, ts -t))
@@ -136,7 +138,9 @@ class Server(object):
             del(self.counters[k])
             stats += 1
                 
-        for k, (v, t) in self.gauges.items():
+        #for k, (v, t) in self.gauges.items():
+        for k in list(self.gauges.keys()):
+            v, t = self.gauges[k]
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring gauge %s (age: %s)" % (k, ts - t))
@@ -147,7 +151,9 @@ class Server(object):
                 del(self.gauges[k])
             stats += 1
             
-        for k, (v, t) in self.timers.items():
+        #for k, (v, t) in self.timers.items():
+        for k in list(self.timers.keys()):
+            v, t = self.timers[k]
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring timer %s (age: %s)" % (k, ts - t))

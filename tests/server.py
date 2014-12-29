@@ -26,12 +26,12 @@ class ServerBasicsTestCase(unittest.TestCase):
         else:
             assert server is not None
         
-        self.assertEquals(server.expire, 0)
-        self.assertEquals(server.buf, 8192)
-        self.assertEquals(len(server.backends), 1)
-        self.assertEquals(len(server.counters), 0)
-        self.assertEquals(len(server.timers), 0)
-        self.assertEquals(len(server.gauges), 0)
+        self.assertEqual(server.expire, 0)
+        self.assertEqual(server.buf, 8192)
+        self.assertEqual(len(server.backends), 1)
+        self.assertEqual(len(server.counters), 0)
+        self.assertEqual(len(server.timers), 0)
+        self.assertEqual(len(server.gauges), 0)
         
         self.backend.init.assert_called_with({
             'debug': False,
@@ -45,16 +45,16 @@ class ServerBasicsTestCase(unittest.TestCase):
         server = Server()
         server.process('gorets:1|c\nglork:320|ms\ngaugor:333|g')
 
-        self.assertEquals(len(server.counters), 1)
-        self.assertEquals(server.counters.get('gorets')[0], 1.0)
-        self.assertEquals(len(server.timers), 1)
-        self.assertEquals(server.timers.get('glork')[0], [320.0])
-        self.assertEquals(len(server.gauges), 1)
-        self.assertEquals(server.gauges.get('gaugor')[0], 333.0)
+        self.assertEqual(len(server.counters), 1)
+        self.assertEqual(server.counters.get('gorets')[0], 1.0)
+        self.assertEqual(len(server.timers), 1)
+        self.assertEqual(server.timers.get('glork')[0], [320.0])
+        self.assertEqual(len(server.gauges), 1)
+        self.assertEqual(server.gauges.get('gaugor')[0], 333.0)
         
         server.process('gorets:1|c|@0.1')
-        self.assertEquals(len(server.counters), 1)
-        self.assertEquals(server.counters.get('gorets')[0], 11.0)
+        self.assertEqual(len(server.counters), 1)
+        self.assertEqual(server.counters.get('gorets')[0], 11.0)
         
     def test_server_flush(self):
         """
@@ -78,9 +78,9 @@ class ServerBasicsTestCase(unittest.TestCase):
         self.backend.flush.assert_called_with(ANY,  {
             'timers': {}, 'gauges': {'gaugor': 333.0}, 'counters': {}})
         
-        self.assertEquals(len(server.gauges), 1)
-        self.assertEquals(len(server.timers), 0)
-        self.assertEquals(len(server.counters), 0)
+        self.assertEqual(len(server.gauges), 1)
+        self.assertEqual(len(server.timers), 0)
+        self.assertEqual(len(server.counters), 0)
         
     def test_server_flush_del_gauges(self):
         """
@@ -100,9 +100,9 @@ class ServerBasicsTestCase(unittest.TestCase):
             'counters': {'gorets': 1.1}
         })
             
-        self.assertEquals(len(server.gauges), 0)
-        self.assertEquals(len(server.timers), 0)
-        self.assertEquals(len(server.counters), 0)
+        self.assertEqual(len(server.gauges), 0)
+        self.assertEqual(len(server.timers), 0)
+        self.assertEqual(len(server.counters), 0)
         
     def test_server_flush_backends(self):
         """
@@ -128,9 +128,9 @@ class ServerBasicsTestCase(unittest.TestCase):
         
         sleep(2)
         server.flush()        
-        self.assertEquals(len(server.gauges), 0)
-        self.assertEquals(len(server.timers), 0)
-        self.assertEquals(len(server.counters), 0)
+        self.assertEqual(len(server.gauges), 0)
+        self.assertEqual(len(server.timers), 0)
+        self.assertEqual(len(server.counters), 0)
         
         
     def __create_backend(self):
