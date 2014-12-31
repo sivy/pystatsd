@@ -38,7 +38,7 @@ class Server(object):
 
     def __init__(self, pct_threshold=90, debug=False, flush_interval=10000,
                  expire=0, no_aggregate_counters=False, deleteGauges=False,
-                 backends=[], options={}):
+                 backends=[]):
         self.buf = 8192
         self.flush_interval = flush_interval
         self.pct_threshold = pct_threshold
@@ -50,7 +50,12 @@ class Server(object):
         self.backends = backends
         self.deleteGauges = deleteGauges
         
-        options.update({'debug': debug, 'flush_interval': flush_interval})
+        options = {
+            'debug': debug,
+            'flush_interval': flush_interval,
+            'pct_threshold': pct_threshold,
+            'expire': expire
+        }
         
         # initialize each backend
         for backend in backends:

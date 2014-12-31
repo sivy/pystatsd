@@ -33,10 +33,7 @@ class ServerBasicsTestCase(unittest.TestCase):
         self.assertEqual(len(server.timers), 0)
         self.assertEqual(len(server.gauges), 0)
         
-        self.backend.init.assert_called_with({
-            'debug': False,
-            'flush_interval': 10000
-        })
+        self.backend.init.assert_called_with({'debug': False, 'flush_interval': 10000, 'expire': 0, 'pct_threshold': 90})
         
     def test_server_process(self):
         """

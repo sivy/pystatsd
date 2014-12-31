@@ -3,9 +3,12 @@ import logging
 log = logging.getLogger(__name__)
 
 class Console(object):
-    def init(self, options):
-        self.debug           = options.get('debug')
-        self.flush_interval  = options.get('flush_interval')
+    def __init__(self, options={}):
+        pass
+        
+    def init(self, cfg):
+        self.debug           = cfg.get('debug')
+        self.flush_interval  = cfg.get('flush_interval')
         
     def flush(self, timestamp, metrics):
         for k, v in metrics['counters'].items():
