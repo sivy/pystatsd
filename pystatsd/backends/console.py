@@ -4,7 +4,7 @@ log = logging.getLogger(__name__)
 
 class Console(object):
     def __init__(self, options={}):
-        pass
+        print("Console started")
         
     def init(self, cfg):
         self.debug           = cfg.get('debug')

@@ -4,10 +4,10 @@ import threading
 import time
 import types
 import logging
-#from . import gmetric
+
 from subprocess import call
 from warnings import warn
-# from xdrlib import Packer, Unpacker
+from .backends import create_instance
 
 log = logging.getLogger(__name__)
 
@@ -229,23 +229,14 @@ class ServerDaemon(Daemon):
     def run(self, options):
         if setproctitle:
             setproctitle('pystatsd')
-        server = Server(pct_threshold=options.pct,
-                        debug=options.debug,
-                        transport=options.transport,
-                        graphite_host=options.graphite_host,
-                        graphite_port=options.graphite_port,
-                        global_prefix=options.global_prefix,
-                        ganglia_host=options.ganglia_host,
-                        ganglia_spoof_host=options.ganglia_spoof_host,
-                        ganglia_port=options.ganglia_port,
-                        gmetric_exec=options.gmetric_exec,
-                        gmetric_options=options.gmetric_options,
-                        flush_interval=options.flush_interval,
-                        no_aggregate_counters=options.no_aggregate_counters,
-                        counters_prefix=options.counters_prefix,
-                        timers_prefix=options.timers_prefix,
-                        expire=options.expire)
-
+            
+        backend = create_instance(options.transport, vars(options))
+        
+        
+        server = Server(options.pct, options.debug, options.flush_interval,
+                 options.expire, options.no_aggregate_counters, options.delete_gauges,
+                 backends=[backend])
+            
         server.serve(options.name, options.port)
 
 
@@ -256,11 +247,14 @@ def run_server():
     parser.add_argument('-d', '--debug', dest='debug', action='store_true', help='debug mode', default=False)
     parser.add_argument('-n', '--name', dest='name', help='hostname to run on ', default='')
     parser.add_argument('-p', '--port', dest='port', help='port to run on (default: 8125)', type=int, default=8125)
-    parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite, ganglia (uses embedded library) or ganglia-gmetric (uses gmetric)', type=str, default="graphite")
+    parser.add_argument('-r', '--transport', dest='transport', help='transport to use graphite, ganglia (uses embedded library), ganglia-gmetric (uses gmetric) or console', type=str, default="graphite")
     
     # Graphite
     parser.add_argument('--graphite-port', dest='graphite_port', help='port to connect to graphite on (default: 2003)', type=int, default=2003)
     parser.add_argument('--graphite-host', dest='graphite_host', help='host to connect to graphite on (default: localhost)', type=str, default='localhost')
+    parser.add_argument('--global-prefix', dest='global_prefix', help='prefix to append to all stats sent to graphite. Useful for hosted services (ex: Hosted Graphite) or stats namespacing (default: None)', type=str, default=None)
+    parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: stats)', type=str, default='stats')
+    parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: stats.timers)', type=str, default='stats.timers')
     
     # Uses embedded Ganglia Library
     parser.add_argument('--ganglia-port', dest='ganglia_port', help='Unicast port to connect to ganglia on', type=int, default=8649)
@@ -271,18 +265,19 @@ def run_server():
     parser.add_argument('--ganglia-gmetric-exec', dest='gmetric_exec', help='Use gmetric executable. Defaults to /usr/bin/gmetric', type=str, default="/usr/bin/gmetric")
     parser.add_argument('--ganglia-gmetric-options', dest='gmetric_options', help='Options to pass to gmetric. Defaults to -d 60', type=str, default="-d 60")
     
-    # Other options
+    # Server options
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
-    parser.add_argument('--global-prefix', dest='global_prefix', help='prefix to append to all stats sent to graphite. Useful for hosted services (ex: Hosted Graphite) or stats namespacing (default: None)', type=str, default=None)
-    parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: stats)', type=str, default='stats')
-    parser.add_argument('--timers-prefix', dest='timers_prefix', help='prefix to append before sending timing data to graphite (default: stats.timers)', type=str, default='stats.timers')
     parser.add_argument('-t', '--pct', dest='pct', help='stats pct threshold (default: 90)', type=int, default=90)
+    parser.add_argument('--delete-gauges', dest='delete_gauges', action='store_true', help='Delete gauges once they have been sent to the backends', default=False)
+    
+    # Process options
     parser.add_argument('-D', '--daemon', dest='daemonize', action='store_true', help='daemonize', default=False)
     parser.add_argument('--pidfile', dest='pidfile', action='store', help='pid file', default='/var/run/pystatsd.pid')
     parser.add_argument('--restart', dest='restart', action='store_true', help='restart a running daemon', default=False)
     parser.add_argument('--stop', dest='stop', action='store_true', help='stop a running daemon', default=False)
     parser.add_argument('--expire', dest='expire', help='time-to-live for old stats (in secs)', type=int, default=0)
+    
     options = parser.parse_args(sys.argv[1:])
 
     log_level = logging.DEBUG if options.debug else logging.INFO
