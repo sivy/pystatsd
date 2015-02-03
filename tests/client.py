@@ -95,16 +95,15 @@ class ClientBasicsTestCase(unittest.TestCase):
             bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_timing_since(self):
-        ts = (1971, 6, 29, 4, 13, 0, 0, 0, -1)
-        now = time.mktime(ts)
-        # add 5 seconds
-        ts = (1971, 6, 29, 4, 13, 5, 0, 0, -1)
-        then = time.mktime(ts)
+        # arbitrary start timestamp value
+        now = 1000.00
+        # five and a half seconds later
+        then = now + 5.5
         mock_time_patcher = mock.patch('time.time', return_value=now)
         mock_time_patcher.start()
 
         stat = 'pystatsd.unittests.test_basic_client_timing_since.time'
-        stat_str = stat + ':-5000000.000000|ms'
+        stat_str = stat + ':-5500.000000|ms'
 
         self.client.timing_since(stat, then)
 
