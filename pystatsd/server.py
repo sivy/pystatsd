@@ -49,7 +49,7 @@ class Server(object):
                  ganglia_host='localhost', ganglia_port=8649,
                  ganglia_spoof_host='statsd:statsd',
                  gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
-                 graphite_host='localhost', graphite_port=2003, global_prefix=None, 
+                 graphite_host='localhost', graphite_port=2003, global_prefix=None,
                  flush_interval=10000,
                  no_aggregate_counters=False, counters_prefix='stats',
                  timers_prefix='stats.timers', expire=0):
@@ -156,7 +156,8 @@ class Server(object):
         elif self.transport == 'ganglia':
             g = gmetric.Gmetric(self.ganglia_host, self.ganglia_port, self.ganglia_protocol)
 
-        for k, (v, t) in self.counters.items():
+        items = tuple(self.counters.items())
+        for k, (v, t) in items:
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring counter %s (age: %s)" % (k, ts -t))
@@ -182,7 +183,8 @@ class Server(object):
             del(self.counters[k])
             stats += 1
 
-        for k, (v, t) in self.gauges.items():
+        items = tuple(self.gauges.items())
+        for k, (v, t) in items:
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring gauge %s (age: %s)" % (k, ts - t))
@@ -204,7 +206,8 @@ class Server(object):
 
             stats += 1
 
-        for k, (v, t) in self.timers.items():
+        items = tuple(self.timers.items())
+        for k, (v, t) in items:
             if self.expire > 0 and t + self.expire < ts:
                 if self.debug:
                     print("Expiring timer %s (age: %s)" % (k, ts - t))
@@ -312,10 +315,11 @@ class Server(object):
         self._set_timer()
         while 1:
             data, addr = self._sock.recvfrom(self.buf)
+            data = data.decode('utf-8')
             try:
                 self.process(data)
             except Exception as error:
-                log.error("Bad data from %s: %s",addr,error) 
+                log.error("Bad data from %s: %s", addr, error)
 
 
     def stop(self):
@@ -364,7 +368,7 @@ def run_server():
     # Use gmetric
     parser.add_argument('--ganglia-gmetric-exec', dest='gmetric_exec', help='Use gmetric executable. Defaults to /usr/bin/gmetric', type=str, default="/usr/bin/gmetric")
     parser.add_argument('--ganglia-gmetric-options', dest='gmetric_options', help='Options to pass to gmetric. Defaults to -d 60', type=str, default="-d 60")
-    # 
+    #
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
     parser.add_argument('--global-prefix', dest='global_prefix', help='prefix to append to all stats sent to graphite. Useful for hosted services (ex: Hosted Graphite) or stats namespacing (default: None)', type=str, default=None)
