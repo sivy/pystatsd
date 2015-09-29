@@ -1,5 +1,6 @@
-*.pyc
+*.py[cdo]
 build
 dist
 *.egg-info
 *.log
+.tox/

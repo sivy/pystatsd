@@ -79,9 +79,9 @@ class ClientBasicsTestCase(unittest.TestCase):
         self.client.update_stats(stats, 5)
 
         for stat, value in data.items():
-            stat_str = stat + value
+            stat_str = '{}:{}'.format(stat, value)
             # thanks tos9 in #python for 'splaining the return_value bit.
-            self.mock_socket.return_value.sendto.assert_call_any(
+            self.mock_socket.return_value.sendto.assert_any_call(
                 bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_timing(self):
