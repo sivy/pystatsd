@@ -7,11 +7,13 @@ from pystatsd import Client, Server
 
 
 def worker():
-    srvr = Server(debug=True, flush_interval=500)
-    srvr.serve()
+    #srvr = Server(debug=True, flush_interval=500)
+    #srvr.serve()
+    pass
 
 
-p = Process(target=worker, daemon=False)
+#p = Process(target=worker, daemon=False)
+p = Process(target=worker)
 p.start()
 time.sleep(1)
 
