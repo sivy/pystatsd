@@ -10,7 +10,7 @@ server, a front end/proxy for the Graphite stats collection and graphing server.
     - code: https://github.com/etsy/statsd
     - blog post: http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/
 
-**pystatsd** has [been tested on](http://travis-ci.org/sivy/py-statsd) python 2.5, 2.6, and 2.7.
+**pystatsd** has [been tested on](http://travis-ci.org/sivy/py-statsd) python 2.7 and 3.4.
 
 Status
 -------------
@@ -38,6 +38,14 @@ See statsd_test for sample usage:
     sc.decrement('python_test.decr_int')
     sc.gauge('python_test.gauge', 42)
 
+or, to run the server from a simple command, if you have the package installed:
+
+    $ pystatsd-server
+
+Check out the options for the command for more information:
+
+    $ pystatsd-server --help
+
 
 Building a Debian Package
 -------------
@@ -54,6 +62,13 @@ under init/, and will be installed to /usr/share/doc if you build/install a
 will read configuration variables from /etc/default/pystatsd. By default the
 pystatsd daemon runs as user 'nobody' which is a good thing from a security
 perspective.
+
+Developing
+-------------
+
+Make sure you have `tox` installed, then just run the tests:
+
+    $ make test
 
 Troubleshooting
 -------------
