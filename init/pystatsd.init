@@ -6,7 +6,7 @@
 # description: Pystatsd is a front end/proxy for the Graphite stats collection and graphing server.
 #              
 # processname: pystatsd
-# config: /etc/sysconfig/pystatsd
+# config: /etc/default/pystatsd
 # pidfile: /var/run/pystatsd.pid
 
 ### BEGIN INIT INFO
