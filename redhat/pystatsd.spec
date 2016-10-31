@@ -7,8 +7,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           pystatsd
-Version:        0.1.7
-Release:        4%{?dist}
+Version:        0.1.10
+Release:        1%{?dist}
 Summary:        Python implementation of the Statsd client/server
 Group:          Applications/Internet
 License:        Unknown
@@ -63,10 +63,12 @@ rm -rf %{buildroot}
 %doc README.md
 %config %{_sysconfdir}/default/pystatsd
 %{python_sitelib}/*
-/usr/bin/pystatsd-server
-/etc/init.d/pystatsd
+%{_bindir}/pystatsd-server
+%{_sysconfdir}/init.d/pystatsd
 
 %changelog
+* Mon Oct 31 2016 David Bishop <david@gnuconsulting.com> - 0.1.10-1
+- Update to latest released version
 * Mon Apr 07 2014 Stefan Richter <stefan@02strich.de> - 0.1.7-4
 - update to 4a60cbb2d8152925fa0d18b1666be3bad2e2884b
 - also use/install /etc/default/pystatsd
