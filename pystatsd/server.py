@@ -47,7 +47,7 @@ class Server(object):
 
     def __init__(self, pct_threshold=90, debug=False, transport='graphite',
                  ganglia_host='localhost', ganglia_port=8649,
-                 ganglia_spoof_host='statsd:statsd',
+                 ganglia_spoof_host='statsd:statsd', ganglia_max_length=100,
                  gmetric_exec='/usr/bin/gmetric', gmetric_options = '-d',
                  graphite_host='localhost', graphite_port=2003, global_prefix=None, 
                  flush_interval=10000,
@@ -64,6 +64,8 @@ class Server(object):
         # Use gmetric
         self.gmetric_exec = gmetric_exec
         self.gmetric_options = gmetric_options
+        # Common Ganglia
+        self.ganglia_max_length = ganglia_max_length
         # Set DMAX to flush interval plus 20%. That should avoid metrics to prematurely expire if there is
         # some type of a delay when flushing
         self.dmax = int(self.flush_interval * 1.2)
@@ -88,7 +90,10 @@ class Server(object):
         self.flusher = 0
 
     def send_to_ganglia_using_gmetric(self,k,v,group, units):
-        call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])
+        if len(k) >= self.ganglia_max_length:
+            log.debug("Ganglia metric too long. Ignoring: %s" % k)
+        else:
+            call([self.gmetric_exec, self.gmetric_options, "-u", units, "-g", group, "-t", "double", "-n",  k, "-v", str(v) ])
 
 
     def process(self, data):
@@ -174,7 +179,10 @@ class Server(object):
             elif self.transport == 'ganglia':
                 # We put counters in _counters group. Underscore is to make sure counters show up
                 # first in the GUI. Change below if you disagree
-                g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
+                if len(k) >= self.ganglia_max_length:
+                    log.debug("Ganglia metric too long. Ignoring: %s" % k)
+                else:
+                    g.send(k, v, "double", "count", "both", 60, self.dmax, "_counters", self.ganglia_spoof_host)
             elif self.transport == 'ganglia-gmetric':
                 self.send_to_ganglia_using_gmetric(k,v, "_counters", "count")
 
@@ -198,7 +206,10 @@ class Server(object):
                 msg = '%s.%s %s %s\n' % (self.counters_prefix, k, v, ts)
                 stat_string += msg
             elif self.transport == 'ganglia':
-                g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
+                if len(k) >= self.ganglia_max_length:
+                    log.debug("Ganglia metric too long. Ignoring: %s" % k)
+                else:
+                    g.send(k, v, "double", "count", "both", 60, self.dmax, "_gauges", self.ganglia_spoof_host)
             elif self.transport == 'ganglia-gmetric':
                 self.send_to_ganglia_using_gmetric(k,v, "_gauges", "gauge")
 
@@ -250,12 +261,15 @@ class Server(object):
                     # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
                     # 3521 k ms which is 3.521 seconds
                     # What group should these metrics be in. For the time being we'll set it to the name of the key
-                    group = k
-                    g.send(k + "_min", min / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_mean", mean / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_max", max / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
-                    g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                    if len(k) >= self.ganglia_max_length:
+                        log.debug("Ganglia metric too long. Ignoring: %s" % k)
+                    else:
+                        group = k
+                        g.send(k + "_min", min / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                        g.send(k + "_mean", mean / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                        g.send(k + "_max", max / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                        g.send(k + "_count", count, "double", "count", "both", 60, self.dmax, group, self.ganglia_spoof_host)
+                        g.send(k + "_" + str(self.pct_threshold) + "pct", max_threshold / 1000, "double", "seconds", "both", 60, self.dmax, group, self.ganglia_spoof_host)
                 elif self.transport == 'ganglia-gmetric':
                     # We are gonna convert all times into seconds, then let rrdtool add proper SI unit. This avoids things like
                     # 3521 k ms which is 3.521 seconds
@@ -364,6 +378,8 @@ def run_server():
     # Use gmetric
     parser.add_argument('--ganglia-gmetric-exec', dest='gmetric_exec', help='Use gmetric executable. Defaults to /usr/bin/gmetric', type=str, default="/usr/bin/gmetric")
     parser.add_argument('--ganglia-gmetric-options', dest='gmetric_options', help='Options to pass to gmetric. Defaults to -d 60', type=str, default="-d 60")
+    # Common for ganglia
+    parser.add_argument('--ganglia-max-length', dest='ganglia_max_length', help='Maximum length of metric names for ganglia. Defaults to 100 characters', type=str, default=100)
     # 
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
