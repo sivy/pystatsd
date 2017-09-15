@@ -1,3 +1,9 @@
+python-statsd (1.1) testing; urgency=low
+
+  *  Fix to truncate long metrics names before sending to ganglia
+
+ -- seph <seph@directionless.org>  Fri, 15 Sep 2017 20:18:57 +0000
+
 python-statsd (1.0-4) testing; urgency=low
 
   * update to 36a59d3b126ded4658aff25bce94e844a1c6413e
@@ -9,7 +15,7 @@ python-statsd (1.0-2) UNRELEASED; urgency=low
 
   [ Rob Terhaar ]
   * add requirement module for python-argparse
-  * added upstart script to /usr/share/docs/python-statsd/ 
+  * added upstart script to /usr/share/docs/python-statsd/
 
   [ Gábor Farkas ]
   * do not override the threshold
