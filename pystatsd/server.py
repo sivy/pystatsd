@@ -8,8 +8,6 @@ from subprocess import call
 from warnings import warn
 # from xdrlib import Packer, Unpacker
 
-log = logging.getLogger(__name__)
-
 try:
     from setproctitle import setproctitle
 except ImportError:
@@ -39,8 +37,6 @@ def _clean_key(k):
             k.replace('/', '-').replace(' ', '_')
         )
     )
-
-
 
 TIMER_MSG = '''%(prefix)s.%(key)s.lower %(min)s %(ts)s
 %(prefix)s.%(key)s.count %(count)s %(ts)s
@@ -404,6 +400,7 @@ def run_server():
     log_level = logging.DEBUG if options.debug else logging.INFO
     logging.basicConfig(level=log_level,format='%(asctime)s [%(levelname)s] %(message)s')
 
+    log.info("Starting up on %s" % options.port)
     daemon = ServerDaemon(options.pidfile)
     if options.daemonize:
         daemon.start(options)
@@ -413,6 +410,9 @@ def run_server():
         daemon.stop()
     else:
         daemon.run(options)
+
+
+log = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     run_server()
