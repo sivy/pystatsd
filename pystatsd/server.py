@@ -4,7 +4,6 @@ import threading
 import time
 import types
 import logging
-from . import gmetric
 from subprocess import call
 from warnings import warn
 # from xdrlib import Packer, Unpacker
@@ -16,7 +15,15 @@ try:
 except ImportError:
     setproctitle = None
 
-from .daemon import Daemon
+# Messily get the import for things we're distributing. This is in a
+# try block, since we seem to need different syntax based on some set
+# of python version and whetehr or not we're in a library.
+try:
+    from . import gmetric
+    from .daemon import Daemon
+except ValueError:
+    import gmetric
+    from daemon import Daemon
 
 
 __all__ = ['Server']
