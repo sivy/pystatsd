@@ -18,5 +18,10 @@ setup(
     classifiers=[
         "License :: OSI Approved :: BSD License",
     ],
-    scripts=['bin/pystatsd-server']
+    scripts=['bin/pystatsd-server'],
+    extras_require={
+        ':python_version == "2.6"': [
+            'argparse',
+        ],
+    },
 )
