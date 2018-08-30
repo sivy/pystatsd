@@ -39,6 +39,7 @@
 #   Added Spoofing support
 
 
+import sys
 from xdrlib import Packer, Unpacker
 import socket
 
@@ -90,8 +91,14 @@ class Gmetric:
         ( meta_msg, data_msg )  = gmetric_write(NAME, VAL, TYPE, UNITS, SLOPE, TMAX, DMAX, GROUP, SPOOF)
         # print msg
 
-        self.socket.sendto(bytes(bytearray(meta_msg, "utf-8")), self.hostport)
-        self.socket.sendto(bytes(bytearray(data_msg, "utf-8")), self.hostport)
+        if sys.version_info[0] == 2:
+            # python 2
+            self.socket.sendto(meta_msg, self.hostport)
+            self.socket.sendto(data_msg, self.hostport)
+        else:
+            self.socket.sendto(bytes(bytearray(meta_msg, "utf-8")), self.hostport)
+            self.socket.sendto(bytes(bytearray(data_msg, "utf-8")), self.hostport)
+
 
 def gmetric_write(NAME, VAL, TYPE, UNITS, SLOPE, TMAX, DMAX, GROUP, SPOOF):
     """
