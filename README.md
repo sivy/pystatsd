@@ -1,5 +1,3 @@
-![lint_python](https://github.com/sivy/pystatsd/workflows/lint_python/badge.svg)
-
 Introduction
 ------------
 
@@ -17,11 +15,9 @@ server, a front end/proxy for the Graphite stats collection and graphing server.
 Status
 -------------
 
-Reviewing and merging pull requests, bringing stuff up to date, now with tests!
+Reviewing and merging pull requests, bringing stuff up to date, with tests!
 
-[![Build Status](https://secure.travis-ci.org/sivy/py-statsd.png?branch=master)](http://travis-ci.org/sivy/py-statsd)
-
-
+![lint_python](https://github.com/sivy/pystatsd/workflows/lint_python/badge.svg)
 
 Usage
 -------------
@@ -39,7 +35,6 @@ See statsd_test for sample usage:
     sc.increment('python_test.inc_int')   # or sc.incr()
     sc.decrement('python_test.decr_int')  # or sc.decr()
     sc.gauge('python_test.gauge', 42)
-
 
 Building a Debian Package
 -------------
