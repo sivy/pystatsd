@@ -74,7 +74,7 @@ class ClientBasicsTestCase(unittest.TestCase):
             'pystatsd.unittests.test_basic_client_update_stats_multi'
         ]
 
-        data = dict((stat, "%s|c" % '5') for stat in stats)
+        data = dict((stat, ":%s|c" % '5') for stat in stats)
 
         self.client.update_stats(stats, 5)
 
