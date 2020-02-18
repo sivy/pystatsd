@@ -12,6 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@master
+        with:
+          python-version: ${{ matrix.python-version }}
       - run: pip install black codespell flake8 isort  # pytest
       - run: black . --diff || true
       - run: codespell --quiet-level=2 || true  # --ignore-words-list="" --skip=""
