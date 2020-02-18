@@ -138,7 +138,7 @@ class Server(object):
         if len(rest) == 1:
             sample_rate = float(re.match('^@([\d\.]+)', rest[0]).group(1))
             if sample_rate == 0:
-                warn("Ignoring counter with sample rate of zero: <%s>" % (metric))
+                warn("Ignoring counter with sample rate of zero: <%s>" % (key))
                 return
 
         counter = self.counters.setdefault(key, [ 0, ts ])
