@@ -15,7 +15,7 @@ except ImportError:
 
 # Messily get the import for things we're distributing. This is in a
 # try block, since we seem to need different syntax based on some set
-# of python version and whetehr or not we're in a library.
+# of Python versions and whetehr or not we're in a library.
 try:
     from . import gmetric
     from .daemon import Daemon
