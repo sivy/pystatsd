@@ -1,3 +1,5 @@
+![lint_python](https://github.com/sivy/pystatsd/workflows/lint_python/badge.svg)
+
 Introduction
 ------------
 
@@ -10,7 +12,7 @@ server, a front end/proxy for the Graphite stats collection and graphing server.
     - code: https://github.com/etsy/statsd
     - blog post: http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/
 
-**pystatsd** has [been tested on](http://travis-ci.org/sivy/py-statsd) python 2.5, 2.6, and 2.7.
+**pystatsd** is [tested on](https://github.com/sivy/pystatsd/actions) Python 2.7 and 3.8.
 
 Status
 -------------
@@ -34,8 +36,8 @@ See statsd_test for sample usage:
     sc = Client('example.org',8125)
 
     sc.timing('python_test.time',500)
-    sc.increment('python_test.inc_int')
-    sc.decrement('python_test.decr_int')
+    sc.increment('python_test.inc_int')   # or sc.incr()
+    sc.decrement('python_test.decr_int')  # or sc.decr()
     sc.gauge('python_test.gauge', 42)
 
 
