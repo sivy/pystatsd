@@ -18,7 +18,7 @@ jobs:
       - if: matrix.python-version != 2.7
         run: |
           pip install black
-          black . --diff || true
+          black . --diff --skip-string-normalization || true
       - run: codespell --ignore-words-list="gonna,process'" --quiet-level=2  # --skip=""
       - run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
       - run: isort --recursive . || true
