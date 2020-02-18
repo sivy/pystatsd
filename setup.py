@@ -15,6 +15,7 @@ setup(
     license = "BSD",
     packages=['pystatsd'],
     long_description=read('README.md'),
+    long_description_content_type='text/markdown',
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 2.7",
