@@ -17,7 +17,7 @@ Status
 
 Reviewing and merging pull requests, bringing stuff up to date, with tests!
 
-![lint_python](https://github.com/sivy/pystatsd/workflows/lint_python/badge.svg)
+[![lint_python](https://github.com/sivy/pystatsd/workflows/lint_python/badge.svg)](https://github.com/sivy/pystatsd/actions)
 
 Usage
 -------------
