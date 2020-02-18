@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@master
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install codespell flake8 isort pytest
+      - run: pip install codespell flake8 isort
       - if: matrix.python-version != 2.7
         run: |
           pip install --quiet black
@@ -25,4 +25,3 @@ jobs:
       - run: isort --recursive . || true
       - run: pip install -r requirements.txt
       - run: nosetests tests
-      - run: pytest . || true
