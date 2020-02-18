@@ -74,14 +74,14 @@ class ClientBasicsTestCase(unittest.TestCase):
             'pystatsd.unittests.test_basic_client_update_stats_multi'
         ]
 
-        data = dict((stat, "%s|c" % '5') for stat in stats)
+        data = dict((stat, ":%s|c" % '5') for stat in stats)
 
         self.client.update_stats(stats, 5)
 
         for stat, value in data.items():
             stat_str = stat + value
             # thanks tos9 in #python for 'splaining the return_value bit.
-            self.mock_socket.return_value.sendto.assert_call_any(
+            self.mock_socket.return_value.sendto.assert_any_call(
                 bytes(stat_str, 'utf-8'), self.addr)
 
     def test_basic_client_timing(self):
