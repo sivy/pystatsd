@@ -298,7 +298,11 @@ class Server(object):
             graphite = socket.socket()
             try:
                 graphite.connect((self.graphite_host, self.graphite_port))
-                graphite.sendall(bytes(bytearray(stat_string, "utf-8")))
+                if sys.version_info()[0] == 2:
+                    # python 2
+                    graphite.sendall(stat_string)
+                else:
+                    graphite.sendall(bytes(bytearray(stat_string, "utf-8")))
                 graphite.close()
             except socket.error as e:
                 log.error("Error communicating with Graphite: %s" % e)
