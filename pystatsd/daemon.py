@@ -70,7 +70,10 @@ class Daemon(object):
         pid = None
         if os.path.exists(self.pidfile):
             with open(self.pidfile, 'r') as fp:
-                pid = int(fp.read().strip())
+                try:
+                    pid = int(fp.read().strip())
+                except ValueError:
+                    pass
 
         if pid:
             msg = 'pidfile (%s) exists. Daemon already running?\n'
