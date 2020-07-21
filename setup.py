@@ -23,5 +23,10 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    scripts=['bin/pystatsd-server']
+    scripts=['bin/pystatsd-server'],
+    extras_require={
+        ':python_version == "2.6"': [
+            'argparse',
+        ],
+    },
 )
