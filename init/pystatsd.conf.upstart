@@ -1,6 +1,6 @@
-# pystatsd upstart script
+# statsd_to_logstash upstart script
 # 2011 - rob@atlanticdynamic.com
-# copy this to /etc/init/pystatsd.conf
+# copy this to /etc/init/statsd_to_logstash.conf
 #
 
 description "start and stop the py-statsd server"
@@ -18,12 +18,12 @@ stop on shutdown
 respawn
 
 pre-start script
-  . /etc/default/pystatsd
+  . /etc/default/statsd_to_logstash
 end script
 
 script
-  . /etc/default/pystatsd
-  exec su -s /bin/sh -c "/usr/bin/pystatsd-server \
+  . /etc/default/statsd_to_logstash
+  exec su -s /bin/sh -c "/usr/bin/statsd-to-logstash-server \
 --port $LOCAL_PYSTATD_PORT \
 --pct $PCT \
 --flush-interval $FLUSH_INTERVAL \

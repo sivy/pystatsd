@@ -1,6 +1,0 @@
-#!/usr/bin/make -f
-%:
-	dh --buildsystem=python_distutils $@
-
-override_dh_installchangelogs:
-	dh_installchangelogs NEWS

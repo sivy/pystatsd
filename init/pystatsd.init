@@ -1,21 +1,21 @@
 #!/bin/bash
 #
-# pystatsd      This shell script takes care of starting and stopping pystatsd.
+# statsd_to_logstash      This shell script takes care of starting and stopping statsd_to_logstash.
 #
 # chkconfig: 2345 80 30
 # description: Pystatsd is a front end/proxy for the Graphite stats collection and graphing server.
 #              
-# processname: pystatsd
-# config: /etc/sysconfig/pystatsd
-# pidfile: /var/run/pystatsd.pid
+# processname: statsd_to_logstash
+# config: /etc/sysconfig/statsd_to_logstash
+# pidfile: /var/run/statsd_to_logstash.pid
 
 ### BEGIN INIT INFO
-# Provides: pystatsd
+# Provides: statsd_to_logstash
 # Required-Start: $local_fs $network
 # Required-Stop: $local_fs $network
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
-# Short-Description: start and stop pystatsd
+# Short-Description: start and stop statsd_to_logstash
 # Description: Pystatsd is a front end/proxy for the Graphite stats collection and graphing server.
 ### END INIT INFO
 
@@ -28,32 +28,32 @@ PCT=90
 FLUSH_INTERVAL=10000
 COUNTERS_PREFIX=stats
 TIMERS_PREFIX=stats.timers
-GRAPHITE_HOST=localhost
-GRAPHITE_PORT=2003
+LOGSTASH_HOST=localhost
+LOGSTASH_PORT=2003
 USER=nobody
 
 # Load settings file if it exists
-if [ -e /etc/default/pystatsd ]; then
-    . /etc/default/pystatsd
+if [ -e /etc/default/statsd_to_logstash ]; then
+    . /etc/default/statsd_to_logstash
 fi
 
-PIDFILE=/var/run/pystatsd.pid
+PIDFILE=/var/run/statsd_to_logstash.pid
 
 # Check that networking is up.
 [ "${NETWORKING}" = "no" ] && exit 1
 
-[ -x /usr/bin/pystatsd-server ] || exit 5
+[ -x /usr/bin/statsd-to-logstash-server ] || exit 5
 
-prog="pystatsd"
+prog="statsd_to_logstash"
 
 start() {
     # Start daemons.
     ret=0
     echo -n $"Starting $prog: "
-    daemon /usr/bin/pystatsd-server --port $LOCAL_PYSTATD_PORT --pct $PCT --flush-interval $FLUSH_INTERVAL --counters-prefix $COUNTERS_PREFIX --timers-prefix $TIMERS_PREFIX --graphite-host $GRAPHITE_HOST --graphite-port $GRAPHITE_PORT --daemon --pidfile $PIDFILE
+    daemon /usr/bin/statsd-to-logstash-server --port $LOCAL_PYSTATD_PORT --pct $PCT --flush-interval $FLUSH_INTERVAL --logstash-host $LOGSTASH_HOST --logstash-port $LOGSTASH_PORT --daemon --pidfile $PIDFILE
     RETVAL=$?
     echo
-    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/pystatsd
+    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/statsd_to_logstash
     let ret+=$RETVAL
 
 
@@ -63,10 +63,10 @@ start() {
 stop() {
     # Stop daemons.
     echo -n $"Shutting down $prog: "
-    /usr/bin/pystatsd-server --stop --pidfile $PIDFILE
+    /usr/bin/statsd_to_logstash-server --stop --pidfile $PIDFILE
     RETVAL=$?
     echo
-    [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/pystatsd
+    [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/statsd_to_logstash
     return $RETVAL
 }
 
@@ -97,7 +97,7 @@ case "$1" in
 	RETVAL=$?
 	;;
     status)
-	echo -n pystatsd; status -p $PIDFILE -l pystatsd
+	echo -n statsd_to_logstash; status -p $PIDFILE -l statsd_to_logstash
 	RETVAL=$?
 	;;
     *)

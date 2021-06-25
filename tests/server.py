@@ -1,8 +1,8 @@
 import unittest
 import mock
 
-# from pystatsd.statsd import Client
-from pystatsd.server import Server
+# from statsd_to_logstash.statsd import Client
+from statsd_to_logstash.server import Server
 
 
 class ServerBasicsTestCase(unittest.TestCase):
@@ -12,7 +12,7 @@ class ServerBasicsTestCase(unittest.TestCase):
     def setUp(self):
         self.patchers = []
 
-        socket_patcher = mock.patch('pystatsd.statsd.socket.socket')
+        socket_patcher = mock.patch('statsd_to_logstash.statsd.socket.socket')
         self.mock_socket = socket_patcher.start()
         self.patchers.append(socket_patcher)
 

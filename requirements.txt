@@ -1,2 +1,3 @@
 nose
 mock
+python3-logstash==0.4.80

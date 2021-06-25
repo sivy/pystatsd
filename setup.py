@@ -1,27 +1,25 @@
 import os
 from setuptools import setup
-from pystatsd import VERSION
+from statsd_to_logstash import VERSION
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "pystatsd",
+    name = "statsd-to-logstash",
     version=".".join(map(str, VERSION)),
-    author = "Steve Ivy",
-    author_email = "steveivy@gmail.com",
-    description = ("pystatsd is a client for Etsy's statsd server, a front end/proxy for the Graphite stats collection and graphing server."),
-    url='https://github.com/sivy/py-statsd',
+    author = "Yonatan Kiron",
+    author_email = "yonatankiron@gmail.com",
+    description = ("statsd-to-logstash is a client for Etsy's statsd server, a front end/proxy for the logstash server."),
+    url='https://github.com/YonatanKiron/statsd-to-logstash',
     license = "BSD",
-    packages=['pystatsd'],
+    packages=['statsd-to-logstash'],
     long_description=read('README.md'),
     classifiers=[
-        "License :: OSI Approved :: BSD License",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.8"
     ],
-    scripts=['bin/pystatsd-server']
+    install_requires=[
+        "python3-logstash==0.4.80"
+    ],
+    scripts=['bin/statsd-to-logstash-server']
 )

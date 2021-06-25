@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pystatsd import Client, Server
+from statsd_to_logstash import Client, Server
 
 sc = Client('localhost', 8125)
 

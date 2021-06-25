@@ -1,8 +1,8 @@
 # config file template for pystatd.
-# copy this to /etc/default/pystatsd and the included upstart or init.d script,
+# copy this to /etc/default/statsd_to_logstash and the included upstart or init.d script,
 # will read daemon settings from this file
 
-# Local port pystatsd listens on
+# Local port statsd_to_logstash listens on
 LOCAL_PYSTATD_PORT=8125
 # stats pct threshold
 PCT=90
@@ -13,8 +13,8 @@ COUNTERS_PREFIX=stats
 # prefix to append before sending timing data to graphite
 TIMERS_PREFIX=stats.timers
 # host to connect to graphite on
-GRAPHITE_HOST=localhost
+LOGSTASH_HOST=localhost
 # port to connect to graphite on
-GRAPHITE_PORT=2003
-# user to run pystatsd as
+LOGSTASH_PORT=2003
+# user to run statsd_to_logstash as
 USER=nobody
